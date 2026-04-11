@@ -1,0 +1,17 @@
+🚀 Excited to share my latest project: Lumina - Smart Event Orchestrator! 🏏
+
+Anyone who has ever been to an IPL match at Chepauk knows the absolute chaos of the Innings Break. 30,000 passionate fans hitting the concessions at the exact same moment. Wait times skyrocket, navigation becomes impossible, and fans miss out on the experience.
+
+I built Lumina to solve exactly this. Lumina is a dynamic crowd-orchestration engine that tracks stadium congestion in real-time, coupled with an elite AI Concierge powered by Google Gemini 1.5 Flash.
+
+When the Innings Break inevitably triggers a massive crowd surge at the J-Stand, Lumina's logic engine calculates the bottleneck and Gemini seamlessly routes you to the fastest alternative, keeping the venue moving and fans happy!
+
+Check out the live interactive preview here: [Insert Live Preview Link]
+Source code: [Insert GitHub Repo Link]
+
+Built with:
+⚡ React + Vite
+🧠 Google Gemini AI
+🛡️ vitest for logic verification
+
+#GoogleHackathon #SmartVenue #PromptWars #AI #React #WebDevelopment #GeminiAI
