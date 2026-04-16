@@ -1,3 +1,5 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&family=Outfit:wght@400;600;700&display=swap');
+
 :root {
   /* Chepauk IPL Color Palette */
   --midnight-sea: #051624;
@@ -13,6 +15,14 @@
   --status-clear: #00d46a;
   --status-moderate: #f59e0b;
   --status-critical: #ff4b4b;
+  --status-optimal: var(--status-clear);
+  --status-warning: var(--status-moderate);
+
+  /* DRS Colors */
+  --drs-purple: #a855f7;
+  --drs-purple-glow: rgba(168, 85, 247, 0.4);
+  --drs-green: #22c55e;
+  --drs-red: #ef4444;
 }
 
 * {
@@ -24,7 +34,7 @@
 body {
   margin: 0;
   font-family: 'Inter', sans-serif;
-  background-color: var(--midnight-sea);
+  background: linear-gradient(135deg, #051624 0%, #0a1f33 40%, #071d2e 100%);
   color: var(--text-primary);
   line-height: 1.5;
   -webkit-font-smoothing: antialiased;
@@ -36,14 +46,14 @@ h1, h2, h3, h4, h5, h6 {
   font-weight: 600;
 }
 
-/* Glassmorphism Utilities */
+/* ============ GLASSMORPHISM ============ */
 .glass-panel {
   background: var(--glass-bg);
   backdrop-filter: blur(12px);
   -webkit-backdrop-filter: blur(12px);
   border: 1px solid var(--glass-border);
   border-radius: 16px;
-  padding: 24px;
+  padding: 20px;
   box-shadow: 0 4px 30px rgba(0, 0, 0, 0.3);
 }
 
@@ -52,74 +62,321 @@ h1, h2, h3, h4, h5, h6 {
   text-shadow: 0 0 10px var(--chepauk-yellow-glow);
 }
 
-/* Base App Layout */
+/* ============ APP LAYOUT ============ */
 .app-container {
   display: flex;
   flex-direction: column;
-  height: 100vh;
-  max-width: 1400px;
+  min-height: 100vh;
+  max-width: 1500px;
   margin: 0 auto;
-  padding: 20px;
+  padding: 16px;
+  gap: 16px;
 }
 
-.header {
+/* ============ MATCH INFO BANNER ============ */
+.match-banner {
+  padding: 16px 24px;
+  border: 1px solid rgba(252, 213, 0, 0.2);
+  transition: all 0.3s ease;
+}
+.match-banner-flash {
+  border-color: var(--chepauk-yellow);
+  box-shadow: 0 0 30px rgba(252, 213, 0, 0.3);
+}
+.match-banner-drs {
+  border-color: var(--drs-purple) !important;
+  box-shadow: 0 0 30px var(--drs-purple-glow) !important;
+  animation: drs-border-pulse 1.5s infinite alternate;
+}
+@keyframes drs-border-pulse {
+  from { box-shadow: 0 0 15px var(--drs-purple-glow); }
+  to { box-shadow: 0 0 40px var(--drs-purple-glow); }
+}
+.match-banner-teams {
   display: flex;
-  justify-content: space-between;
   align-items: center;
-  margin-bottom: 24px;
+  justify-content: center;
+  gap: 32px;
+  flex-wrap: wrap;
 }
-
-.header-title {
-  font-size: 2rem;
+.team-block {
   display: flex;
   align-items: center;
   gap: 12px;
 }
+.team-logo {
+  font-family: 'Outfit', sans-serif;
+  font-weight: 700;
+  font-size: 1.1rem;
+  padding: 6px 14px;
+  border-radius: 8px;
+  letter-spacing: 1px;
+}
+.team-full-name {
+  font-size: 0.85rem;
+  color: var(--text-secondary);
+}
+.match-center-info {
+  text-align: center;
+}
+.match-vs {
+  font-family: 'Outfit', sans-serif;
+  font-weight: 700;
+  font-size: 1.5rem;
+  color: var(--chepauk-yellow);
+  text-shadow: 0 0 15px var(--chepauk-yellow-glow);
+}
+.match-venue {
+  font-size: 0.75rem;
+  color: var(--text-secondary);
+}
+.match-date {
+  font-size: 0.7rem;
+  color: var(--text-secondary);
+  opacity: 0.7;
+}
+.match-meta-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-top: 10px;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+.toss-info {
+  font-size: 0.75rem;
+  color: var(--text-secondary);
+}
+.attendance-badge {
+  font-size: 0.78rem;
+  background: rgba(0,0,0,0.3);
+  padding: 4px 12px;
+  border-radius: 20px;
+  border: 1px solid rgba(252, 213, 0, 0.15);
+}
+
+/* ============ HEADER ============ */
+.header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+
+.header-title {
+  font-size: 1.8rem;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+}
 
 .header-subtitle {
   color: var(--text-secondary);
-  font-size: 0.9rem;
+  font-size: 0.85rem;
 }
 
+/* ============ TIMER ============ */
+.timer-display {
+  font-family: 'Outfit', sans-serif;
+  font-size: 1.4rem;
+  font-weight: 700;
+  padding: 4px 14px;
+  border-radius: 8px;
+  background: var(--glass-bg);
+  border: 1px solid var(--glass-border);
+  display: inline-flex;
+  align-items: center;
+}
+.timer-pulse {
+  animation: pulse-red 1.5s infinite alternate;
+  color: var(--status-critical);
+  border-color: var(--status-critical);
+  text-shadow: 0 0 10px rgba(255, 75, 75, 0.5);
+}
+.timer-innings {
+  animation: pulse-amber 2s infinite alternate;
+  color: var(--status-moderate);
+  border-color: var(--status-moderate);
+  text-shadow: 0 0 10px rgba(245, 158, 11, 0.5);
+}
+.timer-drs {
+  animation: pulse-purple 1.2s infinite alternate;
+  color: var(--drs-purple);
+  border-color: var(--drs-purple);
+  text-shadow: 0 0 10px var(--drs-purple-glow);
+  font-size: 1.1rem;
+}
+@keyframes pulse-red {
+  from { box-shadow: 0 0 5px rgba(255, 75, 75, 0.2); }
+  to { box-shadow: 0 0 20px rgba(255, 75, 75, 0.7); }
+}
+@keyframes pulse-amber {
+  from { box-shadow: 0 0 5px rgba(245, 158, 11, 0.2); }
+  to { box-shadow: 0 0 20px rgba(245, 158, 11, 0.5); }
+}
+@keyframes pulse-purple {
+  from { box-shadow: 0 0 5px var(--drs-purple-glow); }
+  to { box-shadow: 0 0 25px var(--drs-purple-glow); }
+}
+
+/* ============ BREAK OBSERVATIONS ============ */
+.observations-bar {
+  padding: 10px 16px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  border: 1px solid rgba(245, 158, 11, 0.2);
+  overflow: hidden;
+}
+.obs-title {
+  font-size: 0.75rem;
+  color: var(--chepauk-yellow);
+  font-weight: 600;
+  white-space: nowrap;
+}
+.obs-scroll {
+  display: flex;
+  gap: 16px;
+  overflow-x: auto;
+  flex: 1;
+  padding: 2px 0;
+}
+.obs-scroll::-webkit-scrollbar {
+  height: 3px;
+}
+.obs-scroll::-webkit-scrollbar-track {
+  background: transparent;
+}
+.obs-scroll::-webkit-scrollbar-thumb {
+  background: rgba(255,255,255,0.15);
+  border-radius: 3px;
+}
+.obs-item {
+  font-size: 0.72rem;
+  padding: 4px 10px;
+  border-radius: 8px;
+  white-space: nowrap;
+  animation: fadeSlideIn 0.5s ease-out;
+}
+.obs-innings {
+  background: rgba(245, 158, 11, 0.1);
+  border: 1px solid rgba(245, 158, 11, 0.3);
+  color: #fbbf24;
+}
+.obs-timeout {
+  background: rgba(255, 75, 75, 0.1);
+  border: 1px solid rgba(255, 75, 75, 0.2);
+  color: #fca5a5;
+}
+@keyframes fadeSlideIn {
+  from { opacity: 0; transform: translateX(20px); }
+  to { opacity: 1; transform: translateX(0); }
+}
+
+/* ============ MAIN CONTENT GRID ============ */
 .main-content {
   display: grid;
-  grid-template-columns: 1fr 400px;
-  gap: 24px;
+  grid-template-columns: 1fr 420px;
+  gap: 16px;
   flex: 1;
-  min-height: 0;
+}
+.left-column {
+  display: flex;
+  flex-direction: column;
+}
+.right-column {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
 }
 
-/* Map specific styles */
+/* ============ MAP ============ */
 .map-container {
   display: flex;
   flex-direction: column;
-  height: 100%;
+  flex: 1;
 }
-
 .map-svg-wrapper {
   flex: 1;
   display: flex;
   align-items: center;
   justify-content: center;
-  padding: 20px;
+  padding: 10px;
 }
 
 .stand-path {
   fill: var(--midnight-sea-light);
-  stroke: var(--glass-border);
-  stroke-width: 2;
+  stroke: rgba(255, 255, 255, 0.15);
+  stroke-width: 1.5;
   transition: all 0.5s ease;
 }
-
 .stand-path:hover {
-  filter: brightness(1.2);
+  filter: brightness(1.3);
   cursor: pointer;
+  stroke-width: 2.5;
+  stroke: rgba(255,255,255,0.4);
 }
 
-/* Dynamic Congestion Classes */
-.congestion-low { fill: var(--status-clear) !important; opacity: 0.8;}
-.congestion-medium { fill: var(--status-moderate) !important; opacity: 0.8;}
-.congestion-high { fill: var(--status-critical) !important; opacity: 0.8; animation: pulse 2s infinite;}
+.legend-dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  display: inline-block;
+}
+
+/* ============ CROWD ZONE PANEL ============ */
+.crowd-zones-panel {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-top: 8px;
+  padding: 8px 12px;
+  background: rgba(0, 0, 0, 0.25);
+  border-radius: 12px;
+  border: 1px solid rgba(255, 255, 255, 0.06);
+}
+.crowd-zone-item {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  flex: 1;
+  justify-content: center;
+}
+.crowd-zone-total {
+  background: rgba(252, 213, 0, 0.06);
+  padding: 4px 8px;
+  border-radius: 8px;
+  border: 1px solid rgba(252, 213, 0, 0.15);
+}
+.zone-icon {
+  font-size: 0.8rem;
+}
+.zone-label {
+  font-size: 0.65rem;
+  color: var(--text-secondary);
+  font-weight: 500;
+}
+.zone-value {
+  font-family: 'Outfit', sans-serif;
+  font-weight: 700;
+  font-size: 0.85rem;
+}
+.zone-seats { color: var(--status-clear); }
+.zone-stalls { color: var(--status-moderate); }
+.zone-roaming { color: #38bdf8; }
+.zone-total-val { color: var(--chepauk-yellow); }
+.crowd-zone-divider {
+  width: 1px;
+  height: 20px;
+  background: rgba(255, 255, 255, 0.1);
+}
+
+/* ============ CONGESTION CLASSES ============ */
+.congestion-low { fill: var(--status-clear) !important; opacity: 0.8; }
+.congestion-medium { fill: var(--status-moderate) !important; opacity: 0.8; }
+.congestion-high { fill: var(--status-critical) !important; opacity: 0.85; animation: pulse 2s infinite; }
 
 @keyframes pulse {
   0% { opacity: 0.7; }
@@ -127,118 +384,677 @@ h1, h2, h3, h4, h5, h6 {
   100% { opacity: 0.7; }
 }
 
-/* Chatbot Styles */
+/* ============ STALLS ============ */
+.stall-marker { transition: transform 0.2s; }
+.stall-marker:hover { transform: scale(1.2); }
+.stall-rect {
+  stroke: rgba(255,255,255,0.2);
+  stroke-width: 1;
+  rx: 6;
+  transition: all 0.4s ease;
+}
+
+/* ============ WATER STATIONS ============ */
+.water-circle {
+  fill: rgba(56, 189, 248, 0.2);
+  stroke: #38bdf8;
+  stroke-width: 1.5;
+  animation: water-pulse 3s infinite;
+}
+@keyframes water-pulse {
+  0% { r: 16; opacity: 0.6; }
+  50% { r: 18; opacity: 1; }
+  100% { r: 16; opacity: 0.6; }
+}
+
+/* ============ CRICKET ANIMATIONS ============ */
+.batsman-swing {
+  animation: bat-swing 0.4s ease-out;
+}
+@keyframes bat-swing {
+  0% { transform: translateX(0); }
+  30% { transform: translateX(-3px) rotate(-10deg); }
+  60% { transform: translateX(5px) rotate(15deg); }
+  100% { transform: translateX(0) rotate(0); }
+}
+
+.bowler-run {
+  animation: bowl-run 0.6s ease-in-out;
+}
+@keyframes bowl-run {
+  0% { transform: translateY(-10px); opacity: 0.5; }
+  50% { transform: translateY(0); opacity: 1; }
+  100% { transform: translateY(0); }
+}
+
+.ball-anim {
+  animation: ball-travel 0.8s ease-out forwards;
+}
+.ball-anim-boundary {
+  animation: ball-to-boundary 0.8s ease-out forwards;
+}
+.ball-anim-six {
+  animation: ball-to-six 0.7s ease-out forwards;
+}
+.ball-anim-wicket {
+  animation: ball-to-wicket 0.5s ease-out forwards;
+}
+.ball-anim-fielder {
+  animation: ball-to-fielder 0.6s ease-out forwards;
+}
+
+@keyframes ball-to-boundary {
+  0% { cx: 0; cy: -10; r: 2; opacity: 1; }
+  100% { cx: 55; cy: -60; r: 3; opacity: 0.3; }
+}
+@keyframes ball-to-six {
+  0% { cx: 0; cy: -10; r: 2; opacity: 1; }
+  50% { cy: -50; r: 4; }
+  100% { cx: 0; cy: -90; r: 1; opacity: 0; }
+}
+@keyframes ball-to-wicket {
+  0% { cx: 0; cy: -10; r: 2; }
+  100% { cx: 0; cy: 15; r: 3; fill: #ff4b4b; }
+}
+@keyframes ball-to-fielder {
+  0% { cx: 0; cy: -10; r: 2; }
+  100% { cx: 30; cy: -20; r: 2; opacity: 0.5; }
+}
+
+.boundary-flash {
+  animation: boundary-glow 0.6s ease-out;
+}
+@keyframes boundary-glow {
+  0% { stroke-width: 3; opacity: 0.8; }
+  50% { stroke-width: 6; opacity: 1; }
+  100% { stroke-width: 3; opacity: 0; }
+}
+.six-flash {
+  animation: flashRed 1.5s ease-out;
+}
+
+/* ============ DRS REVIEW STYLES ============ */
+.drs-banner {
+  margin-bottom: 14px;
+  padding: 14px 16px;
+  border-radius: 12px;
+  animation: drsSlideIn 0.6s cubic-bezier(0.16, 1, 0.3, 1);
+  position: relative;
+  overflow: hidden;
+}
+.drs-banner::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  opacity: 0.08;
+  z-index: 0;
+}
+.drs-processing {
+  background: linear-gradient(135deg, rgba(168, 85, 247, 0.15), rgba(168, 85, 247, 0.05));
+  border: 1px solid rgba(168, 85, 247, 0.4);
+  box-shadow: 0 0 20px var(--drs-purple-glow);
+}
+.drs-not-out {
+  background: linear-gradient(135deg, rgba(34, 197, 94, 0.2), rgba(34, 197, 94, 0.05));
+  border: 2px solid var(--drs-green);
+  box-shadow: 0 0 30px rgba(34, 197, 94, 0.4);
+}
+.drs-out {
+  background: linear-gradient(135deg, rgba(239, 68, 68, 0.2), rgba(239, 68, 68, 0.05));
+  border: 2px solid var(--drs-red);
+  box-shadow: 0 0 30px rgba(239, 68, 68, 0.4);
+}
+@keyframes drsSlideIn {
+  from { opacity: 0; transform: translateY(-20px) scale(0.95); }
+  to { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+.drs-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 8px;
+  position: relative;
+  z-index: 1;
+}
+.drs-badge {
+  font-family: 'Outfit', sans-serif;
+  font-weight: 700;
+  font-size: 0.9rem;
+  color: var(--drs-purple);
+  text-shadow: 0 0 10px var(--drs-purple-glow);
+  letter-spacing: 1px;
+}
+.drs-team {
+  font-size: 0.75rem;
+  color: var(--text-secondary);
+  font-weight: 500;
+}
+.drs-type {
+  font-family: 'Outfit', sans-serif;
+  font-size: 1rem;
+  font-weight: 600;
+  color: #e2e8f0;
+  margin-bottom: 6px;
+  text-align: center;
+  position: relative;
+  z-index: 1;
+}
+.drs-players {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  font-size: 0.8rem;
+  color: var(--text-secondary);
+  margin-bottom: 8px;
+  position: relative;
+  z-index: 1;
+}
+.drs-vs {
+  font-family: 'Outfit', sans-serif;
+  font-weight: 700;
+  color: var(--drs-purple);
+  font-size: 0.7rem;
+}
+.drs-processing-indicator {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  font-size: 0.8rem;
+  color: var(--drs-purple);
+  font-weight: 500;
+  padding: 6px 0;
+  position: relative;
+  z-index: 1;
+}
+.drs-spinner {
+  width: 18px;
+  height: 18px;
+  border: 3px solid rgba(168, 85, 247, 0.2);
+  border-top: 3px solid var(--drs-purple);
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+}
+@keyframes spin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+.drs-result {
+  text-align: center;
+  font-family: 'Outfit', sans-serif;
+  font-weight: 700;
+  font-size: 1.1rem;
+  padding: 8px;
+  border-radius: 8px;
+  animation: drsResultReveal 0.8s cubic-bezier(0.16, 1, 0.3, 1);
+  position: relative;
+  z-index: 1;
+}
+.drs-result-notout {
+  color: var(--drs-green);
+  text-shadow: 0 0 15px rgba(34, 197, 94, 0.5);
+}
+.drs-result-out {
+  color: var(--drs-red);
+  text-shadow: 0 0 15px rgba(239, 68, 68, 0.5);
+}
+@keyframes drsResultReveal {
+  0% { opacity: 0; transform: scale(0.5); }
+  50% { opacity: 1; transform: scale(1.15); }
+  100% { opacity: 1; transform: scale(1); }
+}
+
+/* ============ MATCH RESULT BANNER ============ */
+.match-result-banner {
+  text-align: center;
+  padding: 16px;
+  margin-bottom: 14px;
+  background: linear-gradient(135deg, rgba(252, 213, 0, 0.1), rgba(252, 213, 0, 0.03));
+  border: 1px solid rgba(252, 213, 0, 0.3);
+  border-radius: 12px;
+  animation: resultBannerIn 1s cubic-bezier(0.16, 1, 0.3, 1);
+}
+.result-trophy {
+  font-size: 2rem;
+  margin-bottom: 4px;
+  animation: trophyBounce 1.5s ease-in-out infinite;
+}
+@keyframes trophyBounce {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-6px); }
+}
+.result-text {
+  font-family: 'Outfit', sans-serif;
+  font-weight: 700;
+  font-size: 1.2rem;
+  color: var(--chepauk-yellow);
+  text-shadow: 0 0 12px var(--chepauk-yellow-glow);
+  margin-bottom: 4px;
+}
+.result-sub {
+  font-size: 0.72rem;
+  color: var(--text-secondary);
+  opacity: 0.8;
+}
+@keyframes resultBannerIn {
+  from { opacity: 0; transform: scale(0.9); }
+  to { opacity: 1; transform: scale(1); }
+}
+
+/* ============ REVIEWS REMAINING ============ */
+.reviews-remaining {
+  display: flex;
+  justify-content: center;
+  gap: 24px;
+  padding: 6px 0;
+  margin-bottom: 8px;
+  border-bottom: 1px solid var(--glass-border);
+}
+.review-team {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 0.72rem;
+  color: var(--text-secondary);
+}
+.team-badge-mini {
+  font-family: 'Outfit', sans-serif;
+  font-weight: 700;
+  font-size: 0.6rem;
+  padding: 2px 6px;
+  border-radius: 4px;
+  letter-spacing: 0.5px;
+}
+
+/* ============ RRR INFO ============ */
+.rrr-info {
+  margin-left: 8px;
+  color: var(--text-secondary);
+}
+.rrr-divider {
+  color: rgba(255,255,255,0.15);
+  margin: 0 6px;
+}
+.rrr-value {
+  color: var(--status-critical);
+}
+.rrr-needed {
+  color: var(--status-critical);
+}
+.rrr-target {
+  color: var(--chepauk-yellow);
+}
+.commentary-drs {
+  border-left-color: var(--drs-green) !important;
+  background: rgba(34, 197, 94, 0.05) !important;
+}
+
+/* === NEXT MATCH OVERLAY === */
+.next-match-overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  border-radius: 16px;
+  background: rgba(5, 22, 36, 0.9);
+  backdrop-filter: blur(12px);
+  z-index: 100;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  animation: fadeIn 1s ease-out;
+}
+
+.next-match-card {
+  text-align: center;
+  padding: 48px;
+  max-width: 520px;
+  box-shadow: 0 20px 50px rgba(0, 0, 0, 0.6);
+  border-top: 2px solid var(--chepauk-yellow);
+}
+.next-match-trophy {
+  font-size: 3.5rem;
+  margin-bottom: 8px;
+  animation: trophyBounce 2s ease-in-out infinite;
+}
+.next-match-title {
+  font-size: 2rem;
+  color: var(--chepauk-yellow);
+  margin-bottom: 12px;
+  text-shadow: 0 0 20px var(--chepauk-yellow-glow);
+}
+.next-match-result {
+  font-family: 'Outfit', sans-serif;
+  font-weight: 700;
+  font-size: 1.1rem;
+  color: var(--status-clear);
+  margin-bottom: 16px;
+  padding: 8px 16px;
+  background: rgba(0, 212, 106, 0.08);
+  border-radius: 8px;
+  border: 1px solid rgba(0, 212, 106, 0.2);
+}
+.next-match-desc {
+  color: #e2e8f0;
+  margin-bottom: 8px;
+  font-size: 0.85rem;
+}
+.next-match-question {
+  color: var(--chepauk-yellow);
+  font-family: 'Outfit', sans-serif;
+  font-weight: 600;
+  font-size: 1.1rem;
+  margin-bottom: 8px;
+}
+.next-match-home {
+  color: var(--text-secondary);
+  font-size: 0.75rem;
+  margin-bottom: 24px;
+  opacity: 0.8;
+}
+.next-match-btn {
+  padding: 16px 36px;
+  font-size: 1.15rem;
+  font-family: 'Outfit', sans-serif;
+  font-weight: 700;
+  background: linear-gradient(135deg, #38bdf8, #0ea5e9);
+  color: #0f172a;
+  border: none;
+  border-radius: 12px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  box-shadow: 0 4px 15px rgba(56, 189, 248, 0.3);
+}
+.next-match-btn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 25px rgba(56, 189, 248, 0.5);
+}
+.next-match-btn:active {
+  transform: translateY(0);
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+@keyframes six-glow {
+  0% { stroke-width: 4; opacity: 1; }
+  50% { stroke-width: 8; opacity: 1; }
+  100% { stroke-width: 4; opacity: 0; }
+}
+
+.fielder-dot circle {
+  transition: all 0.3s;
+}
+
+/* ============ SCORECARD ============ */
+.scorecard {
+  border: 1px solid rgba(252, 213, 0, 0.15);
+  transition: all 0.3s ease;
+}
+.scorecard-celebration {
+  border-color: var(--chepauk-yellow);
+  box-shadow: 0 0 25px rgba(252, 213, 0, 0.4);
+  animation: celebrate 0.5s ease-out;
+}
+.scorecard-wicket {
+  border-color: var(--status-critical);
+  box-shadow: 0 0 25px rgba(255, 75, 75, 0.4);
+}
+@keyframes celebrate {
+  0% { transform: scale(1); }
+  50% { transform: scale(1.02); }
+  100% { transform: scale(1); }
+}
+
+.scorecard-header {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 16px;
+  margin-bottom: 12px;
+}
+.team-score {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.team-badge {
+  font-family: 'Outfit', sans-serif;
+  font-weight: 700;
+  font-size: 0.85rem;
+  padding: 3px 10px;
+  border-radius: 6px;
+}
+.score-text {
+  font-family: 'Outfit', sans-serif;
+  font-weight: 700;
+  font-size: 1.4rem;
+}
+.overs-text {
+  font-size: 0.75rem;
+  color: var(--text-secondary);
+}
+.vs-badge {
+  font-family: 'Outfit', sans-serif;
+  font-weight: 700;
+  font-size: 0.9rem;
+  color: var(--text-secondary);
+}
+
+.scorecard-rr {
+  text-align: center;
+  font-size: 0.8rem;
+  color: var(--text-secondary);
+  margin-bottom: 10px;
+  padding: 4px 0;
+  border-bottom: 1px solid var(--glass-border);
+}
+
+.scorecard-batsmen {
+  margin-bottom: 8px;
+}
+.batsman-row {
+  display: flex;
+  justify-content: space-between;
+  padding: 4px 8px;
+  font-size: 0.82rem;
+  border-radius: 4px;
+}
+.batsman-row.on-strike {
+  background: rgba(252, 213, 0, 0.08);
+  border-left: 3px solid var(--chepauk-yellow);
+}
+.batsman-name {
+  font-weight: 600;
+}
+.batsman-stats {
+  color: var(--text-secondary);
+  font-size: 0.75rem;
+}
+
+.scorecard-bowler {
+  display: flex;
+  justify-content: space-between;
+  font-size: 0.8rem;
+  color: var(--text-secondary);
+  padding: 6px 8px;
+  background: rgba(0,0,0,0.2);
+  border-radius: 6px;
+  margin-bottom: 10px;
+}
+
+.last-six-balls {
+  display: flex;
+  gap: 6px;
+  justify-content: center;
+  margin-bottom: 10px;
+}
+.ball-indicator {
+  width: 28px;
+  height: 28px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  font-size: 0.7rem;
+  font-weight: 700;
+}
+.ball-dot { background: rgba(255,255,255,0.1); color: var(--text-secondary); }
+.ball-run { background: rgba(0, 212, 106, 0.15); color: var(--status-clear); border: 1px solid rgba(0, 212, 106, 0.3); }
+.ball-four { background: rgba(252, 213, 0, 0.2); color: var(--chepauk-yellow); border: 1px solid var(--chepauk-yellow-glow); }
+.ball-six { background: rgba(255, 75, 75, 0.2); color: var(--status-critical); border: 1px solid rgba(255,75,75,0.4); }
+.ball-wicket { background: rgba(255, 75, 75, 0.3); color: #fff; border: 2px solid var(--status-critical); }
+.ball-wide { background: rgba(56, 189, 248, 0.15); color: #38bdf8; border: 1px solid rgba(56,189,248,0.3); }
+
+.commentary {
+  font-size: 0.8rem;
+  padding: 8px 12px;
+  border-radius: 8px;
+  background: rgba(0,0,0,0.2);
+  border-left: 3px solid var(--glass-border);
+  margin-bottom: 6px;
+  transition: all 0.3s;
+}
+.commentary-exciting {
+  border-left-color: var(--chepauk-yellow);
+  background: rgba(252, 213, 0, 0.05);
+}
+.commentary-wicket {
+  border-left-color: var(--status-critical);
+  background: rgba(255, 75, 75, 0.05);
+}
+
+.partnership {
+  font-size: 0.7rem;
+  color: var(--text-secondary);
+  text-align: center;
+  opacity: 0.7;
+}
+
+/* ============ CHATBOT ============ */
 .chat-container {
   display: flex;
   flex-direction: column;
-  height: 100%;
+  flex: 1;
+  min-height: 350px;
+}
+.chat-container h2 {
+  font-size: 1.1rem;
+  margin-bottom: 8px;
 }
 
 .chat-history {
   flex: 1;
   overflow-y: auto;
-  padding: 16px 0;
+  padding: 12px 0;
   display: flex;
   flex-direction: column;
-  gap: 16px;
+  gap: 12px;
+  min-height: 200px;
 }
 
 .chat-message {
-  padding: 12px 16px;
+  padding: 10px 14px;
   border-radius: 12px;
-  max-width: 85%;
+  max-width: 90%;
   line-height: 1.4;
-  font-size: 0.95rem;
+  font-size: 0.85rem;
 }
-
 .chat-message.user {
   align-self: flex-end;
   background-color: var(--midnight-sea-light);
   border: 1px solid var(--glass-border);
 }
-
 .chat-message.ai {
   align-self: flex-start;
-  background-color: rgba(252, 213, 0, 0.1);
+  background-color: rgba(252, 213, 0, 0.08);
   border: 1px solid var(--chepauk-yellow-glow);
 }
 
 .chat-input-area {
   display: flex;
-  gap: 12px;
+  gap: 10px;
   margin-top: auto;
-  padding-top: 16px;
+  padding-top: 12px;
   border-top: 1px solid var(--glass-border);
 }
-
 .chat-input {
   flex: 1;
   background: var(--midnight-sea-light);
   border: 1px solid var(--glass-border);
   color: white;
-  padding: 12px 16px;
+  padding: 10px 14px;
   border-radius: 8px;
   font-family: 'Inter', sans-serif;
   outline: none;
   transition: border-color 0.2s;
+  font-size: 0.85rem;
 }
-
 .chat-input:focus {
   border-color: var(--chepauk-yellow);
 }
-
 .chat-button {
   background: var(--chepauk-yellow);
   color: var(--midnight-sea);
   border: none;
   border-radius: 8px;
-  padding: 0 24px;
+  padding: 0 20px;
   font-weight: 600;
   cursor: pointer;
   transition: transform 0.1s, opacity 0.2s;
+  font-size: 0.85rem;
 }
+.chat-button:hover { transform: translateY(-1px); }
+.chat-button:active { transform: translateY(1px); }
+.chat-button:disabled { opacity: 0.6; cursor: not-allowed; }
 
-.chat-button:hover {
-  transform: translateY(-1px);
-}
-
-.chat-button:active {
-  transform: translateY(1px);
-}
-
-.chat-button:disabled {
-  opacity: 0.6;
-  cursor: not-allowed;
-}
-
-/* Controls */
+/* ============ CONTROLS ============ */
 .controls {
   display: flex;
-  gap: 12px;
-  margin-top: 16px;
+  gap: 10px;
 }
-
 .control-btn {
   background: var(--midnight-sea-light);
   border: 1px solid var(--glass-border);
   color: white;
   padding: 8px 16px;
-  border-radius: 6px;
+  border-radius: 8px;
   cursor: pointer;
+  font-size: 0.82rem;
+  font-weight: 500;
+  transition: all 0.2s;
 }
-
-.control-btn:hover {
-  background: rgba(255,255,255,0.1);
-}
-
-.control-btn.active {
-  border-color: var(--status-critical);
+.control-btn:hover:not(:disabled) { background: rgba(255,255,255,0.1); }
+.control-btn:disabled { opacity: 0.4; cursor: not-allowed; }
+.timeout-btn {
+  border-color: rgba(255, 75, 75, 0.3);
   color: var(--status-critical);
 }
+.innings-btn {
+  border-color: rgba(245, 158, 11, 0.3);
+  color: var(--status-moderate);
+}
 
-/* Responsive */
-@media (max-width: 900px) {
+/* ============ RESPONSIVE ============ */
+@media (max-width: 960px) {
   .main-content {
     grid-template-columns: 1fr;
+  }
+  .match-banner-teams {
+    flex-direction: column;
+    gap: 12px;
+  }
+  .crowd-zones-panel {
+    flex-wrap: wrap;
+  }
+  .crowd-zone-divider {
+    display: none;
   }
 }

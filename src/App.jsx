@@ -1,46 +1,250 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import StadiumEngine from './engine/StadiumEngine';
 import StadiumMap from './components/StadiumMap';
+import Scorecard from './components/Scorecard';
 import AiConcierge from './components/AiConcierge';
 
 const App = () => {
   const [engine] = useState(() => new StadiumEngine());
   const [stadiumState, setStadiumState] = useState(engine.getState());
+  const [timeoutTimer, setTimeoutTimer] = useState(0);
+  const [inningsTimer, setInningsTimer] = useState(0);
 
+  // Track automated timeouts
+  const automatedTriggers = useRef({
+    inn1_to1: false,
+    inn1_to2: false,
+    inn2_to1: false,
+    inn2_to2: false,
+    inningsBreak: false
+  });
+
+  // Simulation tick — every 2 seconds a new ball is bowled
   useEffect(() => {
     const timer = setInterval(() => {
       setStadiumState(engine.tick());
-    }, 3000); // Tick every 3 seconds for demo purposes
+    }, 2000);
     return () => clearInterval(timer);
   }, [engine]);
 
-  const handleInningsBreak = () => {
+  // Strategic Timeout countdown (2:30 = 150s)
+  useEffect(() => {
+    let interval;
+    if (timeoutTimer > 0) {
+      interval = setInterval(() => {
+        setTimeoutTimer(prev => prev - 1);
+      }, 1000);
+    } else if (timeoutTimer === 0 && stadiumState.matchStatus === 'Strategic Timeout') {
+      engine.endBreak();
+      setStadiumState(engine.getState());
+    }
+    return () => clearInterval(interval);
+  }, [timeoutTimer, stadiumState.matchStatus, engine]);
+
+  // Innings Break countdown (15 min = 900s, accelerated to 60s for simulation)
+  useEffect(() => {
+    let interval;
+    if (inningsTimer > 0) {
+      interval = setInterval(() => {
+        setInningsTimer(prev => prev - 1);
+      }, 1000);
+    } else if (inningsTimer === 0 && stadiumState.matchStatus === 'Innings Break') {
+      engine.endBreak();
+      setStadiumState(engine.getState());
+    }
+    return () => clearInterval(interval);
+  }, [inningsTimer, stadiumState.matchStatus, engine]);
+
+  const handleInningsBreak = useCallback(() => {
     engine.triggerInningsBreak();
     setStadiumState(engine.getState());
-  };
+    setInningsTimer(900); // 15 minutes real-time innings break
+  }, [engine]);
 
-  const handleStrategicTimeout = () => {
+  const handleStrategicTimeout = useCallback(() => {
     engine.triggerStrategicTimeout();
     setStadiumState(engine.getState());
+    setTimeoutTimer(150); // 2 minutes 30 seconds real-time strategic timeout
+  }, [engine]);
+
+  // Automated Timeouts Logic (8th over and 14th over) + Innings Break
+  useEffect(() => {
+    if (stadiumState.matchStatus !== 'In Progress') return;
+
+    const currentInningsNum = stadiumState.currentInnings;
+    const innings = currentInningsNum === 1 ? stadiumState.scorecard.innings1 : stadiumState.scorecard.innings2;
+
+    if (currentInningsNum === 1) {
+      if (innings.overs === 8 && innings.balls === 0 && !automatedTriggers.current.inn1_to1) {
+        automatedTriggers.current.inn1_to1 = true;
+        handleStrategicTimeout();
+      } else if (innings.overs === 14 && innings.balls === 0 && !automatedTriggers.current.inn1_to2) {
+        automatedTriggers.current.inn1_to2 = true;
+        handleStrategicTimeout();
+      } else if ((innings.wickets >= 10 || (innings.overs >= 20 && innings.balls === 0)) && !automatedTriggers.current.inningsBreak) {
+        automatedTriggers.current.inningsBreak = true;
+        handleInningsBreak();
+      }
+    } else if (currentInningsNum === 2) {
+      if (innings.overs === 8 && innings.balls === 0 && !automatedTriggers.current.inn2_to1) {
+        automatedTriggers.current.inn2_to1 = true;
+        handleStrategicTimeout();
+      } else if (innings.overs === 14 && innings.balls === 0 && !automatedTriggers.current.inn2_to2) {
+        automatedTriggers.current.inn2_to2 = true;
+        handleStrategicTimeout();
+      }
+    }
+  }, [stadiumState, handleInningsBreak, handleStrategicTimeout]);
+
+  const formatTime = (seconds) => {
+    const m = Math.floor(seconds / 60);
+    const s = seconds % 60;
+    return `${m}:${s.toString().padStart(2, '0')}`;
   };
+
+  // Get crowd zones
+  const zones = stadiumState.crowdZones || { inSeats: 0, atAmenities: 0, roaming: 0, total: 0 };
+  
+  const matchInfo = stadiumState.matchInfo;
+  const isTimeout = stadiumState.matchStatus === 'Strategic Timeout';
+  const isInningsBreak = stadiumState.matchStatus === 'Innings Break';
+  const isMatchComplete = stadiumState.matchStatus === 'Match Complete';
+  const lastEvent = stadiumState.scorecard.lastEvent;
+  const isBoundary = lastEvent && (lastEvent.type === 'four' || lastEvent.type === 'six');
+  const isDRS = stadiumState.drs && stadiumState.drs.active;
+
+  // Required run rate
+  const requiredRunRate = stadiumState.currentInnings === 2 ? engine.getRequiredRunRate() : null;
+
+  // Break observations
+  const observations = stadiumState.breakObservations || [];
 
   return (
     <div className="app-container">
+      {/* === MATCH INFO BANNER === */}
+      <div className={`match-banner glass-panel ${isBoundary ? 'match-banner-flash' : ''} ${isDRS ? 'match-banner-drs' : ''}`} id="match-info-banner">
+        <div className="match-banner-teams">
+          <div className="team-block">
+            <span className="team-logo" style={{ background: matchInfo.team1.color, color: '#051624' }}>{matchInfo.team1.short}</span>
+            <span className="team-full-name">{matchInfo.team1.name}</span>
+          </div>
+          <div className="match-center-info">
+            <div className="match-vs">VS</div>
+            <div className="match-venue">{matchInfo.venue}</div>
+            <div className="match-date">{matchInfo.date}</div>
+          </div>
+          <div className="team-block">
+            <span className="team-logo" style={{ background: matchInfo.team2.color, color: '#fff' }}>{matchInfo.team2.short}</span>
+            <span className="team-full-name">{matchInfo.team2.name}</span>
+          </div>
+        </div>
+        <div className="match-meta-row">
+          <span className="toss-info">🪙 {matchInfo.toss}</span>
+          <span className="attendance-badge" id="total-attendance">
+            🎟️ Attendance: <strong>{zones.total.toLocaleString()}</strong>
+            {' | '}🪑 <strong>{zones.inSeats.toLocaleString()}</strong>
+            {' | '}🏬 <strong>{zones.atAmenities.toLocaleString()}</strong>
+            {' | '}🚶 <strong>{zones.roaming.toLocaleString()}</strong>
+          </span>
+        </div>
+      </div>
+
+      {/* === HEADER WITH CONTROLS & TIMERS === */}
       <header className="header">
         <div>
-          <h1 className="header-title glow-text">Lumina</h1>
-          <p className="header-subtitle">Chepauk Orchestrator | Match Status: <strong style={{color: 'var(--chepauk-yellow)'}}>{stadiumState.matchStatus}</strong></p>
+          <h1 className="header-title glow-text">
+            Lumina
+            {timeoutTimer > 0 && (
+              <span className="timer-display timer-pulse">⏱ {formatTime(timeoutTimer)}</span>
+            )}
+            {inningsTimer > 0 && (
+              <span className="timer-display timer-innings">🕐 {formatTime(inningsTimer)}</span>
+            )}
+            {isDRS && (
+              <span className="timer-display timer-drs">📺 DRS REVIEW</span>
+            )}
+          </h1>
+          <p className="header-subtitle">
+            Chepauk Orchestrator | Status: <strong style={{ color: isDRS ? '#a855f7' : isTimeout ? 'var(--status-critical)' : isInningsBreak ? '#f59e0b' : isMatchComplete ? '#38bdf8' : 'var(--status-clear)' }}>
+              {isDRS ? 'DRS Review in Progress' : stadiumState.matchStatus}
+            </strong>
+            {matchInfo.matchNumber && <span style={{ marginLeft: '12px', opacity: 0.6 }}>Match #{matchInfo.matchNumber}</span>}
+          </p>
         </div>
-        
+
         <div className="controls" aria-label="Simulation Controls">
-          <button className="control-btn" onClick={handleStrategicTimeout}>Trigger Strategic Timeout</button>
-          <button className="control-btn active" style={{borderColor: 'var(--status-critical)', color: 'var(--status-critical)'}} onClick={handleInningsBreak}>Trigger Innings Break</button>
+          <button className="control-btn timeout-btn" onClick={handleStrategicTimeout} disabled={isTimeout || isInningsBreak || isMatchComplete || isDRS}>
+            ⏸ Strategic Timeout
+          </button>
+          <button className="control-btn innings-btn" onClick={handleInningsBreak} disabled={isTimeout || isInningsBreak || isMatchComplete || isDRS}>
+            🔄 Innings Break
+          </button>
         </div>
       </header>
-      
-      <main className="main-content">
-        <StadiumMap state={stadiumState} />
-        <AiConcierge stadiumState={stadiumState} />
+
+      {/* === BREAK OBSERVATIONS LOG === */}
+      {observations.length > 0 && (
+        <div className="observations-bar glass-panel" id="break-observations">
+          <span className="obs-title">📋 Crowd Observations:</span>
+          <div className="obs-scroll">
+            {observations.map((obs, i) => (
+              <span key={i} className={`obs-item ${obs.type === 'innings_break' ? 'obs-innings' : 'obs-timeout'}`}>
+                {obs.message}
+              </span>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* === MAIN CONTENT === */}
+      <main className="main-content" style={{ position: 'relative' }}>
+        <div className="left-column">
+          <StadiumMap state={stadiumState} />
+        </div>
+        <div className="right-column">
+          <Scorecard
+            scorecard={stadiumState.scorecard}
+            matchInfo={stadiumState.matchInfo}
+            currentInnings={stadiumState.currentInnings}
+            drs={stadiumState.drs}
+            matchResult={stadiumState.matchResult}
+            matchStatus={stadiumState.matchStatus}
+            requiredRunRate={requiredRunRate}
+          />
+          <AiConcierge stadiumState={stadiumState} />
+        </div>
+
+        {/* OVERLAY: NEXT MATCH */}
+        {stadiumState.matchStatus === 'Ready For Next Match' && (
+          <div className="next-match-overlay">
+            <div className="next-match-card glass-panel">
+              <div className="next-match-trophy">🏟️</div>
+              <h2 className="next-match-title">Stadium is Empty!</h2>
+              {stadiumState.matchResult && (
+                <p className="next-match-result">
+                  🏆 {stadiumState.matchResult}
+                </p>
+              )}
+              <p className="next-match-desc">The match is over and the crowd has fully departed. All {matchInfo.totalAttendance.toLocaleString()} fans have exited.</p>
+              <p className="next-match-question">Do you want to start the next match?</p>
+              <p className="next-match-home">CSK will play at home — next opponent will be randomly selected</p>
+              <button
+                className="next-match-btn"
+                onClick={() => {
+                  engine.startNextMatch();
+                  setStadiumState(engine.getState());
+                  setTimeoutTimer(0);
+                  setInningsTimer(0);
+                  automatedTriggers.current = {
+                    inn1_to1: false, inn1_to2: false, inn2_to1: false, inn2_to2: false, inningsBreak: false
+                  };
+                }}
+              >
+                ✨ START NEXT MATCH
+              </button>
+            </div>
+          </div>
+        )}
       </main>
     </div>
   );
