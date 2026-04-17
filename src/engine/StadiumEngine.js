@@ -6,7 +6,30 @@
  * ball-by-ball action, scorecard, DRS reviews, and event-based crowd reactions.
  */
 
+/**
+ * StadiumEngine — Full IPL Match Simulation Engine for M.A. Chidambaram Stadium (Chepauk).
+ * 
+ * Simulates a complete IPL T20 cricket match with:
+ * - Ball-by-ball scoring with realistic outcome probabilities
+ * - 23 stadium stands with dynamic crowd density tracking
+ * - 10 sponsor stalls and 4 water stations with queue management
+ * - DRS (Decision Review System) with processing and reversal logic
+ * - Strategic Timeout (2:30) and Innings Break (15 min) crowd surges
+ * - Post-match crowd dispersal and next-match generation
+ * - Crowd zone analytics (in-seats, at-amenities, roaming)
+ * 
+ * @class StadiumEngine
+ * @example
+ * const engine = new StadiumEngine();
+ * const state = engine.tick(); // Advances simulation by one ball
+ * const snapshot = engine.getState(); // Returns immutable state clone
+ */
 class StadiumEngine {
+  /**
+   * Creates a new StadiumEngine instance.
+   * Initializes IPL team rosters, stadium layout, and starts the first match.
+   * CSK is always the home team at Chepauk.
+   */
   constructor() {
     // IPL 2026 Teams & Rosters Database
     this.iplTeams = [
@@ -49,6 +72,11 @@ class StadiumEngine {
     this.startNextMatch();
   }
 
+  /**
+   * Creates the initial state object with all stadium entities.
+   * @private
+   * @returns {Object} Default state with stands, stalls, water stations, scorecard, DRS, etc.
+   */
   _createInitialState() {
     return {
       matchStatus: 'In Progress',
@@ -165,6 +193,12 @@ class StadiumEngine {
     };
   }
 
+  /**
+   * Starts a new match with CSK as home team vs a random IPL opponent.
+   * Resets all state: scorecard, stands, stalls, water stations, DRS, attendance.
+   * Generates random toss result and assigns batting/bowling order.
+   * Distributes attendance (37,000-38,000) proportionally across 23 stands.
+   */
   startNextMatch() {
     this._matchNumber++;
     const opponents = this.iplTeams.filter(t => t.id !== 'CSK');
@@ -296,10 +330,23 @@ class StadiumEngine {
     this._updateCrowdZones();
   }
 
+  /**
+   * Returns an immutable deep clone of the current engine state.
+   * Mutations to the returned object will NOT affect the engine.
+   * @returns {Object} Deep clone of the current state
+   */
   getState() {
     return structuredClone(this.state);
   }
 
+  /**
+   * Clamps a numeric value to the range [min, max].
+   * @private
+   * @param {number} val - Value to clamp
+   * @param {number} [min=0] - Minimum bound
+   * @param {number} [max=100] - Maximum bound
+   * @returns {number} Clamped and rounded integer
+   */
   _clamp(val, min = 0, max = 100) {
     return Math.max(min, Math.min(max, Math.round(val)));
   }
@@ -473,6 +520,12 @@ class StadiumEngine {
 
   // ===== CRICKET SIMULATION =====
 
+  /**
+   * Simulates a single ball delivery with realistic IPL outcome probabilities.
+   * Updates: scorecard, batsmen stats, bowler stats, partnerships, overs,
+   * run rates, crowd excitement, and triggers DRS on eligible wickets.
+   * @private
+   */
   _simulateBall() {
     if (this.state.matchStatus !== 'In Progress') return;
 
@@ -672,6 +725,12 @@ class StadiumEngine {
 
   // ===== MAIN TICK =====
 
+  /**
+   * Main simulation tick. Called every 2 seconds by the UI timer.
+   * Processes: DRS reviews → ball simulation → crowd movement → 
+   * stall/water queues → post-match dispersal → excitement decay.
+   * @returns {Object} Immutable deep clone of the updated state
+   */
   tick() {
     this.tickCount++;
 
@@ -829,6 +888,11 @@ class StadiumEngine {
 
   // ===== TRIGGERS =====
 
+  /**
+   * Triggers an Innings Break event.
+   * 55-65% of fans leave stands, surging stalls and water stations.
+   * Logs crowd observation data for the observations bar.
+   */
   triggerInningsBreak() {
     // Record crowd snapshot before break
     const preSeatCount = this.state.crowdZones.inSeats;
@@ -876,6 +940,11 @@ class StadiumEngine {
     });
   }
 
+  /**
+   * Triggers a Strategic Timeout event (2:30 duration per IPL rules).
+   * 10-30% of fans leave stands, with a smaller stall surge than innings break.
+   * Logs crowd observation data.
+   */
   triggerStrategicTimeout() {
     const preSeatCount = this.state.crowdZones.inSeats;
 
@@ -910,6 +979,11 @@ class StadiumEngine {
     });
   }
 
+  /**
+   * Ends a break period (innings break or strategic timeout).
+   * Resumes match to "In Progress" and enables mass crowd return.
+   * If first innings is complete, switches to second innings with new batsmen/bowlers.
+   */
   endBreak() {
     this.state.matchStatus = 'In Progress';
     this._crowdReturning = true;
@@ -937,6 +1011,11 @@ class StadiumEngine {
   }
 
   // Get required run rate for 2nd innings
+  /**
+   * Calculates the required run rate for the chasing team in the second innings.
+   * @returns {Object|null} Object with target, runsNeeded, ballsRemaining, requiredRunRate.
+   *   Returns null if it's the first innings.
+   */
   getRequiredRunRate() {
     if (this.state.currentInnings !== 2) return null;
     const inn1 = this.state.scorecard.innings1;

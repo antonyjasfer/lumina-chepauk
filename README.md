@@ -48,6 +48,7 @@ index.html → main.jsx → App.jsx (orchestrator)
 | Service | Usage |
 |---------|-------|
 | **Google Gemini 2.0 Flash** | AI Concierge — receives live stadium telemetry (crowd zones, stall queues, water station loads, match score) and generates contextual routing guidance |
+| **Google Maps Embed API** | Interactive embedded map showing M.A. Chidambaram Stadium location with satellite view and directions |
 | **`@google/generative-ai` SDK** | Official npm package used for Gemini API integration |
 | **Google Fonts** | Inter + Outfit typography for premium UI |
 
@@ -84,7 +85,7 @@ The Gemini prompt includes rich, structured telemetry:
 - Total repo size: **under 1 MB**
 
 ### Testing
-- **27+ unit tests** via Vitest covering:
+- **58 unit + component tests** via Vitest (with `vitest.config.js` coverage configuration) covering:
   - Stadium initialization (stands, stalls, water stations, attendance)
   - Bounds checking and clamping
   - Ball simulation and run rate calculation
@@ -92,11 +93,15 @@ The Gemini prompt includes rich, structured telemetry:
   - DRS review system
   - Match lifecycle (next match, innings switch)
   - State immutability
-- **13+ GeminiService tests** covering:
+- **13 GeminiService tests** covering:
   - Input sanitization (XSS, HTML stripping, length limits)
   - Mock response routing (food, water, merch, crowd, score queries)
   - Rate limiting
   - Edge cases (empty input, non-string input)
+- **14 Component render tests** (React Testing Library) covering:
+  - Scorecard rendering (scores, batsmen, bowler, ball indicators, commentary, DRS reviews, match result)
+  - ErrorBoundary crash recovery and fallback UI
+  - GoogleMapsEmbed rendering and accessibility
 - Run: `npm run test`
 
 ### Accessibility
@@ -111,8 +116,10 @@ The Gemini prompt includes rich, structured telemetry:
 
 ### Google Services
 - Deep integration with **Google Gemini 2.0 Flash** — not just a chatbot, but a telemetry-aware routing engine
+- **Google Maps Embed API** — interactive stadium location map with satellite view
 - Rich, structured prompts that leverage live stadium data
 - Fallback mock engine ensures the UI works identically without an API key
+- **Google Fonts** — Inter + Outfit for premium typography
 
 ---
 

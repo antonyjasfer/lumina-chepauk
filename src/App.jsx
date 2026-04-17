@@ -3,6 +3,7 @@ import StadiumEngine from './engine/StadiumEngine';
 import StadiumMap from './components/StadiumMap';
 import Scorecard from './components/Scorecard';
 import AiConcierge from './components/AiConcierge';
+import GoogleMapsEmbed from './components/GoogleMapsEmbed';
 import ErrorBoundary from './components/ErrorBoundary';
 
 /**
@@ -224,6 +225,7 @@ const App = () => {
               requiredRunRate={requiredRunRate}
             />
             <AiConcierge stadiumState={stadiumState} />
+            <GoogleMapsEmbed />
           </div>
 
           {/* OVERLAY: NEXT MATCH */}
