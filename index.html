@@ -3,15 +3,59 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Lumina | Smart Venue Orchestrator</title>
-    <meta name="description" content="Intelligent crowd orchestration and real-time insights for Chepauk Stadium. Powered by Google Gemini." />
-    <!-- Preconnect to Google Fonts -->
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&family=Outfit:wght@400;600;700&display=swap" rel="stylesheet">
+
+    <!-- SEO Meta Tags -->
+    <title>Lumina — AI-Powered Stadium Concierge | Chepauk IPL Experience</title>
+    <meta name="description" content="Lumina is an AI-powered digital concierge for M.A. Chidambaram Stadium (Chepauk). Real-time crowd analytics, live heatmaps, and Google Gemini-driven routing for the ultimate IPL fan experience." />
+    <meta name="keywords" content="Lumina, Chepauk, IPL, Cricket, AI Concierge, Stadium, Crowd Analytics, Google Gemini, CSK" />
+    <meta name="author" content="Lumina Team" />
+    <meta name="robots" content="index, follow" />
+
+    <!-- Open Graph -->
+    <meta property="og:title" content="Lumina — AI Stadium Concierge for Chepauk" />
+    <meta property="og:description" content="Real-time crowd routing and live heatmaps powered by Google Gemini AI for the IPL experience at M.A. Chidambaram Stadium." />
+    <meta property="og:type" content="website" />
+
+    <!-- Security: Content Security Policy -->
+    <meta http-equiv="Content-Security-Policy" content="
+      default-src 'self';
+      script-src 'self' 'unsafe-inline' 'unsafe-eval';
+      style-src 'self' 'unsafe-inline' https://fonts.googleapis.com;
+      font-src 'self' https://fonts.gstatic.com;
+      connect-src 'self' https://generativelanguage.googleapis.com;
+      img-src 'self' data:;
+    " />
+
+    <!-- Favicon (SVG inline) -->
+    <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🏟️</text></svg>" />
+
+    <!-- Theme Color for mobile browsers -->
+    <meta name="theme-color" content="#051624" />
   </head>
   <body>
+    <!-- Skip Navigation Link (Accessibility) -->
+    <a href="#main-content" class="skip-link" style="
+      position: absolute;
+      top: -100%;
+      left: 0;
+      padding: 12px 24px;
+      background: #fcd500;
+      color: #051624;
+      font-weight: 700;
+      z-index: 10000;
+      text-decoration: none;
+      border-radius: 0 0 8px 0;
+      transition: top 0.2s;
+    ">Skip to main content</a>
+
     <div id="root"></div>
     <script type="module" src="/src/main.jsx"></script>
+
+    <!-- Accessibility: Focus style for skip link -->
+    <style>
+      .skip-link:focus {
+        top: 0 !important;
+      }
+    </style>
   </body>
 </html>

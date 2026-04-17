@@ -425,7 +425,6 @@ class StadiumEngine {
       if (this._wicketsFallen1 > 0) {
         this._wicketsFallen1--;
         // Put the original batsman back
-        const originalBat = this._battingFirstBatsmen[this._wicketsFallen1 + 1];
         // Find the replacement and swap back
         const idx = this.state.scorecard.currentBatsmen.findIndex(b => b.onStrike);
         if (idx !== -1 && this._drsOriginalBatsman) {

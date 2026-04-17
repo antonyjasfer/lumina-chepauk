@@ -1,9 +1,14 @@
-import React, { useState, useEffect, useRef, useCallback } from 'react';
+import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import StadiumEngine from './engine/StadiumEngine';
 import StadiumMap from './components/StadiumMap';
 import Scorecard from './components/Scorecard';
 import AiConcierge from './components/AiConcierge';
+import ErrorBoundary from './components/ErrorBoundary';
 
+/**
+ * App — Root component for the Lumina Chepauk IPL Simulation.
+ * Manages the simulation loop, event triggers, and layout orchestration.
+ */
 const App = () => {
   const [engine] = useState(() => new StadiumEngine());
   const [stadiumState, setStadiumState] = useState(engine.getState());
@@ -35,13 +40,15 @@ const App = () => {
         setTimeoutTimer(prev => prev - 1);
       }, 1000);
     } else if (timeoutTimer === 0 && stadiumState.matchStatus === 'Strategic Timeout') {
-      engine.endBreak();
-      setStadiumState(engine.getState());
+      queueMicrotask(() => {
+        engine.endBreak();
+        setStadiumState(engine.getState());
+      });
     }
     return () => clearInterval(interval);
   }, [timeoutTimer, stadiumState.matchStatus, engine]);
 
-  // Innings Break countdown (15 min = 900s, accelerated to 60s for simulation)
+  // Innings Break countdown (15 min = 900s)
   useEffect(() => {
     let interval;
     if (inningsTimer > 0) {
@@ -49,8 +56,10 @@ const App = () => {
         setInningsTimer(prev => prev - 1);
       }, 1000);
     } else if (inningsTimer === 0 && stadiumState.matchStatus === 'Innings Break') {
-      engine.endBreak();
-      setStadiumState(engine.getState());
+      queueMicrotask(() => {
+        engine.endBreak();
+        setStadiumState(engine.getState());
+      });
     }
     return () => clearInterval(interval);
   }, [inningsTimer, stadiumState.matchStatus, engine]);
@@ -77,34 +86,33 @@ const App = () => {
     if (currentInningsNum === 1) {
       if (innings.overs === 8 && innings.balls === 0 && !automatedTriggers.current.inn1_to1) {
         automatedTriggers.current.inn1_to1 = true;
-        handleStrategicTimeout();
+        queueMicrotask(() => handleStrategicTimeout());
       } else if (innings.overs === 14 && innings.balls === 0 && !automatedTriggers.current.inn1_to2) {
         automatedTriggers.current.inn1_to2 = true;
-        handleStrategicTimeout();
+        queueMicrotask(() => handleStrategicTimeout());
       } else if ((innings.wickets >= 10 || (innings.overs >= 20 && innings.balls === 0)) && !automatedTriggers.current.inningsBreak) {
         automatedTriggers.current.inningsBreak = true;
-        handleInningsBreak();
+        queueMicrotask(() => handleInningsBreak());
       }
     } else if (currentInningsNum === 2) {
       if (innings.overs === 8 && innings.balls === 0 && !automatedTriggers.current.inn2_to1) {
         automatedTriggers.current.inn2_to1 = true;
-        handleStrategicTimeout();
+        queueMicrotask(() => handleStrategicTimeout());
       } else if (innings.overs === 14 && innings.balls === 0 && !automatedTriggers.current.inn2_to2) {
         automatedTriggers.current.inn2_to2 = true;
-        handleStrategicTimeout();
+        queueMicrotask(() => handleStrategicTimeout());
       }
     }
   }, [stadiumState, handleInningsBreak, handleStrategicTimeout]);
 
-  const formatTime = (seconds) => {
+  const formatTime = useCallback((seconds) => {
     const m = Math.floor(seconds / 60);
     const s = seconds % 60;
     return `${m}:${s.toString().padStart(2, '0')}`;
-  };
+  }, []);
 
-  // Get crowd zones
-  const zones = stadiumState.crowdZones || { inSeats: 0, atAmenities: 0, roaming: 0, total: 0 };
-  
+  // Memoize derived values
+  const zones = useMemo(() => stadiumState.crowdZones || { inSeats: 0, atAmenities: 0, roaming: 0, total: 0 }, [stadiumState.crowdZones]);
   const matchInfo = stadiumState.matchInfo;
   const isTimeout = stadiumState.matchStatus === 'Strategic Timeout';
   const isInningsBreak = stadiumState.matchStatus === 'Innings Break';
@@ -114,139 +122,145 @@ const App = () => {
   const isDRS = stadiumState.drs && stadiumState.drs.active;
 
   // Required run rate
-  const requiredRunRate = stadiumState.currentInnings === 2 ? engine.getRequiredRunRate() : null;
+  const requiredRunRate = useMemo(() => {
+    return stadiumState.currentInnings === 2 ? engine.getRequiredRunRate() : null;
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [stadiumState.currentInnings, stadiumState.scorecard, engine]);
 
   // Break observations
   const observations = stadiumState.breakObservations || [];
 
   return (
-    <div className="app-container">
-      {/* === MATCH INFO BANNER === */}
-      <div className={`match-banner glass-panel ${isBoundary ? 'match-banner-flash' : ''} ${isDRS ? 'match-banner-drs' : ''}`} id="match-info-banner">
-        <div className="match-banner-teams">
-          <div className="team-block">
-            <span className="team-logo" style={{ background: matchInfo.team1.color, color: '#051624' }}>{matchInfo.team1.short}</span>
-            <span className="team-full-name">{matchInfo.team1.name}</span>
+    <ErrorBoundary>
+      <div className="app-container" role="application" aria-label="Lumina Stadium Concierge">
+        {/* === MATCH INFO BANNER === */}
+        <div className={`match-banner glass-panel ${isBoundary ? 'match-banner-flash' : ''} ${isDRS ? 'match-banner-drs' : ''}`} id="match-info-banner" role="banner">
+          <div className="match-banner-teams">
+            <div className="team-block">
+              <span className="team-logo" style={{ background: matchInfo.team1.color, color: '#051624' }}>{matchInfo.team1.short}</span>
+              <span className="team-full-name">{matchInfo.team1.name}</span>
+            </div>
+            <div className="match-center-info">
+              <div className="match-vs">VS</div>
+              <div className="match-venue">{matchInfo.venue}</div>
+              <div className="match-date">{matchInfo.date}</div>
+            </div>
+            <div className="team-block">
+              <span className="team-logo" style={{ background: matchInfo.team2.color, color: '#fff' }}>{matchInfo.team2.short}</span>
+              <span className="team-full-name">{matchInfo.team2.name}</span>
+            </div>
           </div>
-          <div className="match-center-info">
-            <div className="match-vs">VS</div>
-            <div className="match-venue">{matchInfo.venue}</div>
-            <div className="match-date">{matchInfo.date}</div>
-          </div>
-          <div className="team-block">
-            <span className="team-logo" style={{ background: matchInfo.team2.color, color: '#fff' }}>{matchInfo.team2.short}</span>
-            <span className="team-full-name">{matchInfo.team2.name}</span>
-          </div>
-        </div>
-        <div className="match-meta-row">
-          <span className="toss-info">🪙 {matchInfo.toss}</span>
-          <span className="attendance-badge" id="total-attendance">
-            🎟️ Attendance: <strong>{zones.total.toLocaleString()}</strong>
-            {' | '}🪑 <strong>{zones.inSeats.toLocaleString()}</strong>
-            {' | '}🏬 <strong>{zones.atAmenities.toLocaleString()}</strong>
-            {' | '}🚶 <strong>{zones.roaming.toLocaleString()}</strong>
-          </span>
-        </div>
-      </div>
-
-      {/* === HEADER WITH CONTROLS & TIMERS === */}
-      <header className="header">
-        <div>
-          <h1 className="header-title glow-text">
-            Lumina
-            {timeoutTimer > 0 && (
-              <span className="timer-display timer-pulse">⏱ {formatTime(timeoutTimer)}</span>
-            )}
-            {inningsTimer > 0 && (
-              <span className="timer-display timer-innings">🕐 {formatTime(inningsTimer)}</span>
-            )}
-            {isDRS && (
-              <span className="timer-display timer-drs">📺 DRS REVIEW</span>
-            )}
-          </h1>
-          <p className="header-subtitle">
-            Chepauk Orchestrator | Status: <strong style={{ color: isDRS ? '#a855f7' : isTimeout ? 'var(--status-critical)' : isInningsBreak ? '#f59e0b' : isMatchComplete ? '#38bdf8' : 'var(--status-clear)' }}>
-              {isDRS ? 'DRS Review in Progress' : stadiumState.matchStatus}
-            </strong>
-            {matchInfo.matchNumber && <span style={{ marginLeft: '12px', opacity: 0.6 }}>Match #{matchInfo.matchNumber}</span>}
-          </p>
-        </div>
-
-        <div className="controls" aria-label="Simulation Controls">
-          <button className="control-btn timeout-btn" onClick={handleStrategicTimeout} disabled={isTimeout || isInningsBreak || isMatchComplete || isDRS}>
-            ⏸ Strategic Timeout
-          </button>
-          <button className="control-btn innings-btn" onClick={handleInningsBreak} disabled={isTimeout || isInningsBreak || isMatchComplete || isDRS}>
-            🔄 Innings Break
-          </button>
-        </div>
-      </header>
-
-      {/* === BREAK OBSERVATIONS LOG === */}
-      {observations.length > 0 && (
-        <div className="observations-bar glass-panel" id="break-observations">
-          <span className="obs-title">📋 Crowd Observations:</span>
-          <div className="obs-scroll">
-            {observations.map((obs, i) => (
-              <span key={i} className={`obs-item ${obs.type === 'innings_break' ? 'obs-innings' : 'obs-timeout'}`}>
-                {obs.message}
-              </span>
-            ))}
+          <div className="match-meta-row">
+            <span className="toss-info">🪙 {matchInfo.toss}</span>
+            <span className="attendance-badge" id="total-attendance" aria-label={`Total attendance ${zones.total.toLocaleString()}`}>
+              🎟️ Attendance: <strong>{zones.total.toLocaleString()}</strong>
+              {' | '}🪑 <strong>{zones.inSeats.toLocaleString()}</strong>
+              {' | '}🏬 <strong>{zones.atAmenities.toLocaleString()}</strong>
+              {' | '}🚶 <strong>{zones.roaming.toLocaleString()}</strong>
+            </span>
           </div>
         </div>
-      )}
 
-      {/* === MAIN CONTENT === */}
-      <main className="main-content" style={{ position: 'relative' }}>
-        <div className="left-column">
-          <StadiumMap state={stadiumState} />
-        </div>
-        <div className="right-column">
-          <Scorecard
-            scorecard={stadiumState.scorecard}
-            matchInfo={stadiumState.matchInfo}
-            currentInnings={stadiumState.currentInnings}
-            drs={stadiumState.drs}
-            matchResult={stadiumState.matchResult}
-            matchStatus={stadiumState.matchStatus}
-            requiredRunRate={requiredRunRate}
-          />
-          <AiConcierge stadiumState={stadiumState} />
-        </div>
-
-        {/* OVERLAY: NEXT MATCH */}
-        {stadiumState.matchStatus === 'Ready For Next Match' && (
-          <div className="next-match-overlay">
-            <div className="next-match-card glass-panel">
-              <div className="next-match-trophy">🏟️</div>
-              <h2 className="next-match-title">Stadium is Empty!</h2>
-              {stadiumState.matchResult && (
-                <p className="next-match-result">
-                  🏆 {stadiumState.matchResult}
-                </p>
+        {/* === HEADER WITH CONTROLS & TIMERS === */}
+        <header className="header" role="heading" aria-level="1">
+          <div>
+            <h1 className="header-title glow-text">
+              Lumina
+              {timeoutTimer > 0 && (
+                <span className="timer-display timer-pulse" aria-live="assertive" role="timer">⏱ {formatTime(timeoutTimer)}</span>
               )}
-              <p className="next-match-desc">The match is over and the crowd has fully departed. All {matchInfo.totalAttendance.toLocaleString()} fans have exited.</p>
-              <p className="next-match-question">Do you want to start the next match?</p>
-              <p className="next-match-home">CSK will play at home — next opponent will be randomly selected</p>
-              <button
-                className="next-match-btn"
-                onClick={() => {
-                  engine.startNextMatch();
-                  setStadiumState(engine.getState());
-                  setTimeoutTimer(0);
-                  setInningsTimer(0);
-                  automatedTriggers.current = {
-                    inn1_to1: false, inn1_to2: false, inn2_to1: false, inn2_to2: false, inningsBreak: false
-                  };
-                }}
-              >
-                ✨ START NEXT MATCH
-              </button>
+              {inningsTimer > 0 && (
+                <span className="timer-display timer-innings" aria-live="assertive" role="timer">🕐 {formatTime(inningsTimer)}</span>
+              )}
+              {isDRS && (
+                <span className="timer-display timer-drs" aria-live="assertive">📺 DRS REVIEW</span>
+              )}
+            </h1>
+            <p className="header-subtitle">
+              Chepauk Orchestrator | Status: <strong style={{ color: isDRS ? '#a855f7' : isTimeout ? 'var(--status-critical)' : isInningsBreak ? '#f59e0b' : isMatchComplete ? '#38bdf8' : 'var(--status-clear)' }}>
+                {isDRS ? 'DRS Review in Progress' : stadiumState.matchStatus}
+              </strong>
+              {matchInfo.matchNumber && <span style={{ marginLeft: '12px', opacity: 0.6 }}>Match #{matchInfo.matchNumber}</span>}
+            </p>
+          </div>
+
+          <nav className="controls" aria-label="Simulation Controls" role="toolbar">
+            <button className="control-btn timeout-btn" onClick={handleStrategicTimeout} disabled={isTimeout || isInningsBreak || isMatchComplete || isDRS} aria-label="Trigger Strategic Timeout">
+              ⏸ Strategic Timeout
+            </button>
+            <button className="control-btn innings-btn" onClick={handleInningsBreak} disabled={isTimeout || isInningsBreak || isMatchComplete || isDRS} aria-label="Trigger Innings Break">
+              🔄 Innings Break
+            </button>
+          </nav>
+        </header>
+
+        {/* === BREAK OBSERVATIONS LOG === */}
+        {observations.length > 0 && (
+          <div className="observations-bar glass-panel" id="break-observations" role="log" aria-label="Crowd Observations Log">
+            <span className="obs-title">📋 Crowd Observations:</span>
+            <div className="obs-scroll">
+              {observations.map((obs, i) => (
+                <span key={i} className={`obs-item ${obs.type === 'innings_break' ? 'obs-innings' : 'obs-timeout'}`}>
+                  {obs.message}
+                </span>
+              ))}
             </div>
           </div>
         )}
-      </main>
-    </div>
+
+        {/* === MAIN CONTENT === */}
+        <main className="main-content" id="main-content" style={{ position: 'relative' }} role="main">
+          <div className="left-column">
+            <StadiumMap state={stadiumState} />
+          </div>
+          <div className="right-column">
+            <Scorecard
+              scorecard={stadiumState.scorecard}
+              matchInfo={stadiumState.matchInfo}
+              currentInnings={stadiumState.currentInnings}
+              drs={stadiumState.drs}
+              matchResult={stadiumState.matchResult}
+              matchStatus={stadiumState.matchStatus}
+              requiredRunRate={requiredRunRate}
+            />
+            <AiConcierge stadiumState={stadiumState} />
+          </div>
+
+          {/* OVERLAY: NEXT MATCH */}
+          {stadiumState.matchStatus === 'Ready For Next Match' && (
+            <div className="next-match-overlay" role="dialog" aria-label="Start Next Match">
+              <div className="next-match-card glass-panel">
+                <div className="next-match-trophy">🏟️</div>
+                <h2 className="next-match-title">Stadium is Empty!</h2>
+                {stadiumState.matchResult && (
+                  <p className="next-match-result">
+                    🏆 {stadiumState.matchResult}
+                  </p>
+                )}
+                <p className="next-match-desc">The match is over and the crowd has fully departed. All {matchInfo.totalAttendance.toLocaleString()} fans have exited.</p>
+                <p className="next-match-question">Do you want to start the next match?</p>
+                <p className="next-match-home">CSK will play at home — next opponent will be randomly selected</p>
+                <button
+                  className="next-match-btn"
+                  aria-label="Start the next IPL match"
+                  onClick={() => {
+                    engine.startNextMatch();
+                    setStadiumState(engine.getState());
+                    setTimeoutTimer(0);
+                    setInningsTimer(0);
+                    automatedTriggers.current = {
+                      inn1_to1: false, inn1_to2: false, inn2_to1: false, inn2_to2: false, inningsBreak: false
+                    };
+                  }}
+                >
+                  ✨ START NEXT MATCH
+                </button>
+              </div>
+            </div>
+          )}
+        </main>
+      </div>
+    </ErrorBoundary>
   );
 };
 

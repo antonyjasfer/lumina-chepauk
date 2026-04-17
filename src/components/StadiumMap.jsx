@@ -1,6 +1,14 @@
 import React from 'react';
 
-const StadiumMap = ({ state }) => {
+/**
+ * StadiumMap — SVG-based real-time heatmap visualization of M.A. Chidambaram Stadium.
+ * Renders 23 stands, 10 sponsor stalls, 4 water stations, and cricket field.
+ * Color-coded congestion levels update dynamically via the StadiumEngine.
+ *
+ * @accessibility SVG has role="img" and aria-label for screen readers.
+ * @accessibility Each stand/stall has a <title> element for tooltip accessibility.
+ */
+const StadiumMap = React.memo(({ state }) => {
   const getCongestionClass = (density) => {
     if (!density && density !== 0) return 'congestion-low';
     if (density > 85) return 'congestion-high';
@@ -90,6 +98,7 @@ const StadiumMap = ({ state }) => {
     return (
       <g key={standName} transform={`rotate(${angle})`} className={`stand-path ${getCongestionClass(standData.density)}`} style={{ cursor: 'pointer' }}>
         <polygon points={polyPoints} />
+        <title>{`${standName}: ${peopleCount.toLocaleString()} / ${capacity.toLocaleString()} people (${Math.round(standData.density)}% full)`}</title>
         <g transform={`translate(0, ${textY}) rotate(${textRotation})`}>
           <text x="0" y="-4" fill="#fff" textAnchor="middle" fontSize={tier === 'lower' ? '9' : '10'} fontWeight="bold" opacity="0.95">{shortName}</text>
           <text x="0" y="7" fill="#fff" textAnchor="middle" fontSize={tier === 'lower' ? '7' : '8'} opacity="0.85">
@@ -164,50 +173,53 @@ const StadiumMap = ({ state }) => {
   const zones = state.crowdZones || { inSeats: 0, atAmenities: 0, roaming: 0, total: 0 };
 
   return (
-    <div className="map-container glass-panel" style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+    <section className="map-container glass-panel" style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }} aria-label="Stadium Heatmap" id="stadium-heatmap">
       <div>
-        <div className="header-title glow-text" style={{ fontSize: '1.4rem' }}>🏟️ Live Heatmap & Crowd Analytics</div>
+        <h2 className="header-title glow-text" style={{ fontSize: '1.4rem' }}>🏟️ Live Heatmap & Crowd Analytics</h2>
         <div className="header-subtitle">M.A. Chidambaram Stadium (Chepauk) — Real-Time Capacity Monitoring</div>
         
         {/* Crowd Zone Breakdown */}
-        <div className="crowd-zones-panel" id="crowd-zones">
+        <div className="crowd-zones-panel" id="crowd-zones" aria-label="Crowd Zone Breakdown" role="group">
           <div className="crowd-zone-item">
-            <span className="zone-icon">🪑</span>
+            <span className="zone-icon" aria-hidden="true">🪑</span>
             <span className="zone-label">In Seats</span>
-            <span className="zone-value zone-seats">{zones.inSeats.toLocaleString()}</span>
+            <span className="zone-value zone-seats" aria-label={`${zones.inSeats.toLocaleString()} in seats`}>{zones.inSeats.toLocaleString()}</span>
           </div>
-          <div className="crowd-zone-divider"></div>
+          <div className="crowd-zone-divider" aria-hidden="true"></div>
           <div className="crowd-zone-item">
-            <span className="zone-icon">🏬</span>
+            <span className="zone-icon" aria-hidden="true">🏬</span>
             <span className="zone-label">At Stalls</span>
-            <span className="zone-value zone-stalls">{zones.atAmenities.toLocaleString()}</span>
+            <span className="zone-value zone-stalls" aria-label={`${zones.atAmenities.toLocaleString()} at stalls`}>{zones.atAmenities.toLocaleString()}</span>
           </div>
-          <div className="crowd-zone-divider"></div>
+          <div className="crowd-zone-divider" aria-hidden="true"></div>
           <div className="crowd-zone-item">
-            <span className="zone-icon">🚶</span>
+            <span className="zone-icon" aria-hidden="true">🚶</span>
             <span className="zone-label">Roaming</span>
-            <span className="zone-value zone-roaming">{zones.roaming.toLocaleString()}</span>
+            <span className="zone-value zone-roaming" aria-label={`${zones.roaming.toLocaleString()} roaming`}>{zones.roaming.toLocaleString()}</span>
           </div>
-          <div className="crowd-zone-divider"></div>
+          <div className="crowd-zone-divider" aria-hidden="true"></div>
           <div className="crowd-zone-item crowd-zone-total">
-            <span className="zone-icon">📊</span>
+            <span className="zone-icon" aria-hidden="true">📊</span>
             <span className="zone-label">Total</span>
-            <span className="zone-value zone-total-val">{zones.total.toLocaleString()}</span>
+            <span className="zone-value zone-total-val" aria-label={`Total ${zones.total.toLocaleString()}`}>{zones.total.toLocaleString()}</span>
           </div>
         </div>
 
         <div style={{ marginTop: '4px', fontSize: '0.7rem', color: 'var(--text-secondary)', display: 'flex', gap: '16px', flexWrap: 'wrap' }}>
           <span style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
             Legend:
-            <span className="legend-dot" style={{ background: 'var(--status-clear)' }}></span> &lt;60%
-            <span className="legend-dot" style={{ background: 'var(--status-moderate)' }}></span> 60-85%
-            <span className="legend-dot" style={{ background: 'var(--status-critical)' }}></span> &gt;85%
+            <span className="legend-dot" style={{ background: 'var(--status-clear)' }} aria-label="Green: under 60% capacity"></span> &lt;60%
+            <span className="legend-dot" style={{ background: 'var(--status-moderate)' }} aria-label="Amber: 60-85% capacity"></span> 60-85%
+            <span className="legend-dot" style={{ background: 'var(--status-critical)' }} aria-label="Red: over 85% capacity"></span> &gt;85%
           </span>
         </div>
       </div>
 
       <div className="map-svg-wrapper" style={{ flex: 1, minHeight: '520px' }}>
-        <svg viewBox="-320 -320 640 640" width="100%" height="100%" style={{ overflow: 'visible' }}>
+        <svg viewBox="-320 -320 640 640" width="100%" height="100%" style={{ overflow: 'visible' }} role="img" aria-label="Interactive heatmap of Chepauk Stadium showing crowd density across all stands, stalls, and water stations">
+          <title>Live Crowd Heatmap — M.A. Chidambaram Stadium (Chepauk)</title>
+          <desc>Real-time visualization showing crowd density in 23 stands, 10 sponsor stalls, and 4 water stations. Colors indicate congestion: green (under 60%), amber (60-85%), red (over 85%).</desc>
+
           {/* Outer ring guide */}
           <circle cx="0" cy="0" r="240" fill="none" stroke="rgba(255,255,255,0.05)" strokeWidth="1" />
           <circle cx="0" cy="0" r="280" fill="none" stroke="rgba(255,255,255,0.03)" strokeWidth="1" strokeDasharray="4 4" />
@@ -266,8 +278,10 @@ const StadiumMap = ({ state }) => {
           )}
         </svg>
       </div>
-    </div>
+    </section>
   );
-};
+});
+
+StadiumMap.displayName = 'StadiumMap';
 
 export default StadiumMap;
