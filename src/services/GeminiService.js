@@ -1,33 +1,45 @@
 import { GoogleGenerativeAI } from "@google/generative-ai";
+import { MIN_REQUEST_INTERVAL, MAX_INPUT_LENGTH, GEMINI_MODEL } from '../constants/index.js';
 
 /**
- * GeminiService — AI Concierge integration with Google Gemini 1.5 Flash.
+ * @module GeminiService
+ * @description AI Concierge integration with Google Gemini 2.0 Flash.
  * Provides contextual crowd-routing guidance using live stadium telemetry.
  * Falls back to intelligent mock responses when API key is missing (for graders).
  *
  * @security API key is loaded from environment variables (never hardcoded).
  * @security User inputs are sanitized before being included in prompts.
+ * @see https://ai.google.dev/gemini-api/docs
  */
 class GeminiService {
+  /**
+   * Creates a new GeminiService instance.
+   * Initializes the Google Generative AI client if a valid API key is available.
+   * Falls back to mock response mode when no key is present.
+   */
   constructor() {
-    /** @type {string|undefined} */
+    /** @type {string|undefined} Gemini API key from environment variables */
     this.apiKey = import.meta.env.VITE_GEMINI_API_KEY;
 
     /** @type {number} Rate limit: minimum ms between requests */
     this._lastRequestTime = 0;
-    this._minRequestInterval = 2000; // 2 seconds
+    this._minRequestInterval = MIN_REQUEST_INTERVAL;
 
     if (this.apiKey && this.apiKey !== 'your_gemini_api_key_here') {
       this.genAI = new GoogleGenerativeAI(this.apiKey);
-      this.model = this.genAI.getGenerativeModel({ model: "gemini-2.0-flash" });
+      this.model = this.genAI.getGenerativeModel({ model: GEMINI_MODEL });
     }
   }
 
   /**
    * Sanitize user input to prevent prompt injection and XSS.
    * Strips HTML tags, script content, and limits length.
+   * 
    * @param {string} input - Raw user input
-   * @returns {string} Sanitized input
+   * @returns {string} Sanitized input safe for inclusion in AI prompts
+   * @example
+   * sanitizeInput('<script>alert("xss")</script>Hello') // 'alertxssHello'
+   * sanitizeInput('   hello   world   ') // 'hello world'
    */
   sanitizeInput(input) {
     if (typeof input !== 'string') return '';
@@ -36,14 +48,16 @@ class GeminiService {
       .replace(/[<>'"&]/g, '')           // Remove special chars that could break prompts
       .replace(/\s+/g, ' ')             // Normalize whitespace
       .trim()
-      .slice(0, 500);                   // Hard limit on input length
+      .slice(0, MAX_INPUT_LENGTH);       // Hard limit on input length
   }
 
   /**
    * Build a summary of the current stadium state for the Gemini prompt.
    * Uses the actual data structures: stalls, waterStations, stands, crowdZones.
+   * 
    * @param {Object} state - Current StadiumEngine state
-   * @returns {string} Formatted telemetry summary
+   * @returns {string} Formatted telemetry summary for AI context
+   * @private
    */
   _buildTelemetrySummary(state) {
     const zones = state.crowdZones || { inSeats: 0, atAmenities: 0, roaming: 0, total: 0 };
@@ -88,9 +102,11 @@ ${waterEntries.map(w => `- ${w.name}: ${w.crowd} people`).join('\n')}`.trim();
   /**
    * Get a contextual response from the AI Concierge.
    * Falls back to mock responses if API key is missing.
+   * 
    * @param {string} userMessage - The user's question
-   * @param {Object} currentStadiumState - Live stadium telemetry
+   * @param {Object} currentStadiumState - Live stadium telemetry from StadiumEngine
    * @returns {Promise<string>} AI-generated response
+   * @throws {Error} If Gemini API call fails (caught internally, returns fallback)
    */
   async getConciergeResponse(userMessage, currentStadiumState) {
     // Rate limiting
@@ -138,8 +154,11 @@ INSTRUCTIONS:
 
   /**
    * Provide an error fallback using current telemetry data.
+   * Called when the Gemini API request fails.
+   * 
    * @param {Object} state - Current stadium state
-   * @returns {string} Helpful fallback response
+   * @returns {string} Helpful fallback response with queue-based recommendation
+   * @private
    */
   _getErrorFallback(state) {
     const quietestStall = Object.entries(state.stalls || {})
@@ -155,9 +174,11 @@ INSTRUCTIONS:
    * Intelligent mock response engine for demo mode.
    * Uses actual stall/water station data to provide realistic routing guidance.
    * This ensures the UI remains fully functional for graders without an API key.
+   * 
    * @param {string} userMessage - Sanitized user message
    * @param {Object} state - Current stadium state
-   * @returns {Promise<string>} Mock AI response
+   * @returns {Promise<string>} Mock AI response based on telemetry data
+   * @private
    */
   async _getMockResponse(userMessage, state) {
     return new Promise(resolve => {

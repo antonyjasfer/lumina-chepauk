@@ -1,0 +1,99 @@
+# Google Cloud Build CI/CD Configuration for Lumina Chepauk
+# Automates: install → lint → test → build → deploy to Cloud Run
+#
+# Usage:
+#   gcloud builds submit --config cloudbuild.yaml .
+#
+# Prerequisites:
+#   - Enable Cloud Build, Cloud Run, and Container Registry APIs
+#   - Set up IAM permissions for the Cloud Build service account
+#
+# @see https://cloud.google.com/build/docs/configuring-builds/create-basic-configuration
+
+steps:
+  # Step 1: Install dependencies
+  - name: 'node:20-alpine'
+    entrypoint: 'npm'
+    args: ['ci']
+    id: 'install'
+
+  # Step 2: Run ESLint
+  - name: 'node:20-alpine'
+    entrypoint: 'npm'
+    args: ['run', 'lint']
+    id: 'lint'
+    waitFor: ['install']
+
+  # Step 3: Run tests with Vitest
+  - name: 'node:20-alpine'
+    entrypoint: 'npm'
+    args: ['run', 'test']
+    id: 'test'
+    waitFor: ['install']
+
+  # Step 4: Build the production bundle
+  - name: 'node:20-alpine'
+    entrypoint: 'npm'
+    args: ['run', 'build']
+    id: 'build'
+    waitFor: ['lint', 'test']
+
+  # Step 5: Build Docker image
+  - name: 'gcr.io/cloud-builders/docker'
+    args:
+      - 'build'
+      - '-t'
+      - 'gcr.io/$PROJECT_ID/lumina-chepauk:$COMMIT_SHA'
+      - '-t'
+      - 'gcr.io/$PROJECT_ID/lumina-chepauk:latest'
+      - '.'
+    id: 'docker-build'
+    waitFor: ['build']
+
+  # Step 6: Push to Google Container Registry
+  - name: 'gcr.io/cloud-builders/docker'
+    args:
+      - 'push'
+      - 'gcr.io/$PROJECT_ID/lumina-chepauk:$COMMIT_SHA'
+    id: 'docker-push'
+    waitFor: ['docker-build']
+
+  # Step 7: Deploy to Google Cloud Run
+  - name: 'gcr.io/google.com/cloudsdktool/cloud-sdk'
+    entrypoint: 'gcloud'
+    args:
+      - 'run'
+      - 'deploy'
+      - 'lumina-chepauk'
+      - '--image'
+      - 'gcr.io/$PROJECT_ID/lumina-chepauk:$COMMIT_SHA'
+      - '--region'
+      - 'asia-south1'
+      - '--platform'
+      - 'managed'
+      - '--allow-unauthenticated'
+      - '--port'
+      - '8080'
+      - '--memory'
+      - '256Mi'
+      - '--cpu'
+      - '1'
+      - '--min-instances'
+      - '0'
+      - '--max-instances'
+      - '3'
+    id: 'deploy'
+    waitFor: ['docker-push']
+
+# Store built images in GCR
+images:
+  - 'gcr.io/$PROJECT_ID/lumina-chepauk:$COMMIT_SHA'
+  - 'gcr.io/$PROJECT_ID/lumina-chepauk:latest'
+
+# Build options
+options:
+  logging: CLOUD_LOGGING_ONLY
+  machineType: 'E2_STANDARD_2'
+
+# Build timeout
+timeout: '600s'

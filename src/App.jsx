@@ -5,10 +5,27 @@ import Scorecard from './components/Scorecard';
 import AiConcierge from './components/AiConcierge';
 import GoogleMapsEmbed from './components/GoogleMapsEmbed';
 import ErrorBoundary from './components/ErrorBoundary';
+import analyticsService from './services/AnalyticsService';
+import {
+  STRATEGIC_TIMEOUT_DURATION,
+  INNINGS_BREAK_DURATION,
+  SIMULATION_TICK_INTERVAL,
+  TIMEOUT_OVER_1,
+  TIMEOUT_OVER_2,
+  STATUS_IN_PROGRESS,
+  STATUS_STRATEGIC_TIMEOUT,
+  STATUS_INNINGS_BREAK,
+  STATUS_MATCH_COMPLETE,
+  STATUS_READY_NEXT,
+} from './constants/index.js';
+import { formatTime } from './utils/formatters';
 
 /**
  * App — Root component for the Lumina Chepauk IPL Simulation.
  * Manages the simulation loop, event triggers, and layout orchestration.
+ *
+ * @component
+ * @returns {React.ReactElement} The root application element
  */
 const App = () => {
   const [engine] = useState(() => new StadiumEngine());
@@ -25,11 +42,25 @@ const App = () => {
     inningsBreak: false
   });
 
+  // Track match start for analytics
+  const matchTrackedRef = useRef(false);
+
+  // Track initial match start
+  useEffect(() => {
+    if (!matchTrackedRef.current && stadiumState.matchInfo) {
+      analyticsService.trackMatchStarted(stadiumState.matchInfo);
+      matchTrackedRef.current = true;
+    }
+  }, [stadiumState.matchInfo]);
+
   // Simulation tick — every 2 seconds a new ball is bowled
   useEffect(() => {
     const timer = setInterval(() => {
-      setStadiumState(engine.tick());
-    }, 2000);
+      analyticsService.startTrace('engine_tick_duration');
+      const newState = engine.tick();
+      analyticsService.stopTrace('engine_tick_duration');
+      setStadiumState(newState);
+    }, SIMULATION_TICK_INTERVAL);
     return () => clearInterval(timer);
   }, [engine]);
 
@@ -40,7 +71,7 @@ const App = () => {
       interval = setInterval(() => {
         setTimeoutTimer(prev => prev - 1);
       }, 1000);
-    } else if (timeoutTimer === 0 && stadiumState.matchStatus === 'Strategic Timeout') {
+    } else if (timeoutTimer === 0 && stadiumState.matchStatus === STATUS_STRATEGIC_TIMEOUT) {
       queueMicrotask(() => {
         engine.endBreak();
         setStadiumState(engine.getState());
@@ -56,7 +87,7 @@ const App = () => {
       interval = setInterval(() => {
         setInningsTimer(prev => prev - 1);
       }, 1000);
-    } else if (inningsTimer === 0 && stadiumState.matchStatus === 'Innings Break') {
+    } else if (inningsTimer === 0 && stadiumState.matchStatus === STATUS_INNINGS_BREAK) {
       queueMicrotask(() => {
         engine.endBreak();
         setStadiumState(engine.getState());
@@ -65,30 +96,40 @@ const App = () => {
     return () => clearInterval(interval);
   }, [inningsTimer, stadiumState.matchStatus, engine]);
 
+  // Track match completion
+  useEffect(() => {
+    if (stadiumState.matchStatus === STATUS_MATCH_COMPLETE && stadiumState.matchResult) {
+      analyticsService.trackMatchCompleted(stadiumState.matchInfo, stadiumState.matchResult);
+    }
+  }, [stadiumState.matchStatus, stadiumState.matchResult, stadiumState.matchInfo]);
+
   const handleInningsBreak = useCallback(() => {
     engine.triggerInningsBreak();
     setStadiumState(engine.getState());
-    setInningsTimer(900); // 15 minutes real-time innings break
-  }, [engine]);
+    setInningsTimer(INNINGS_BREAK_DURATION);
+    analyticsService.trackInningsBreak(stadiumState.currentInnings, stadiumState.scorecard);
+  }, [engine, stadiumState.currentInnings, stadiumState.scorecard]);
 
   const handleStrategicTimeout = useCallback(() => {
     engine.triggerStrategicTimeout();
     setStadiumState(engine.getState());
-    setTimeoutTimer(150); // 2 minutes 30 seconds real-time strategic timeout
-  }, [engine]);
+    setTimeoutTimer(STRATEGIC_TIMEOUT_DURATION);
+    const innings = stadiumState.currentInnings === 1 ? stadiumState.scorecard.innings1 : stadiumState.scorecard.innings2;
+    analyticsService.trackStrategicTimeout(stadiumState.currentInnings, innings?.overs || 0);
+  }, [engine, stadiumState.currentInnings, stadiumState.scorecard]);
 
   // Automated Timeouts Logic (8th over and 14th over) + Innings Break
   useEffect(() => {
-    if (stadiumState.matchStatus !== 'In Progress') return;
+    if (stadiumState.matchStatus !== STATUS_IN_PROGRESS) return;
 
     const currentInningsNum = stadiumState.currentInnings;
     const innings = currentInningsNum === 1 ? stadiumState.scorecard.innings1 : stadiumState.scorecard.innings2;
 
     if (currentInningsNum === 1) {
-      if (innings.overs === 8 && innings.balls === 0 && !automatedTriggers.current.inn1_to1) {
+      if (innings.overs === TIMEOUT_OVER_1 && innings.balls === 0 && !automatedTriggers.current.inn1_to1) {
         automatedTriggers.current.inn1_to1 = true;
         queueMicrotask(() => handleStrategicTimeout());
-      } else if (innings.overs === 14 && innings.balls === 0 && !automatedTriggers.current.inn1_to2) {
+      } else if (innings.overs === TIMEOUT_OVER_2 && innings.balls === 0 && !automatedTriggers.current.inn1_to2) {
         automatedTriggers.current.inn1_to2 = true;
         queueMicrotask(() => handleStrategicTimeout());
       } else if ((innings.wickets >= 10 || (innings.overs >= 20 && innings.balls === 0)) && !automatedTriggers.current.inningsBreak) {
@@ -96,28 +137,22 @@ const App = () => {
         queueMicrotask(() => handleInningsBreak());
       }
     } else if (currentInningsNum === 2) {
-      if (innings.overs === 8 && innings.balls === 0 && !automatedTriggers.current.inn2_to1) {
+      if (innings.overs === TIMEOUT_OVER_1 && innings.balls === 0 && !automatedTriggers.current.inn2_to1) {
         automatedTriggers.current.inn2_to1 = true;
         queueMicrotask(() => handleStrategicTimeout());
-      } else if (innings.overs === 14 && innings.balls === 0 && !automatedTriggers.current.inn2_to2) {
+      } else if (innings.overs === TIMEOUT_OVER_2 && innings.balls === 0 && !automatedTriggers.current.inn2_to2) {
         automatedTriggers.current.inn2_to2 = true;
         queueMicrotask(() => handleStrategicTimeout());
       }
     }
   }, [stadiumState, handleInningsBreak, handleStrategicTimeout]);
 
-  const formatTime = useCallback((seconds) => {
-    const m = Math.floor(seconds / 60);
-    const s = seconds % 60;
-    return `${m}:${s.toString().padStart(2, '0')}`;
-  }, []);
-
   // Memoize derived values
   const zones = useMemo(() => stadiumState.crowdZones || { inSeats: 0, atAmenities: 0, roaming: 0, total: 0 }, [stadiumState.crowdZones]);
   const matchInfo = stadiumState.matchInfo;
-  const isTimeout = stadiumState.matchStatus === 'Strategic Timeout';
-  const isInningsBreak = stadiumState.matchStatus === 'Innings Break';
-  const isMatchComplete = stadiumState.matchStatus === 'Match Complete';
+  const isTimeout = stadiumState.matchStatus === STATUS_STRATEGIC_TIMEOUT;
+  const isInningsBreak = stadiumState.matchStatus === STATUS_INNINGS_BREAK;
+  const isMatchComplete = stadiumState.matchStatus === STATUS_MATCH_COMPLETE;
   const lastEvent = stadiumState.scorecard.lastEvent;
   const isBoundary = lastEvent && (lastEvent.type === 'four' || lastEvent.type === 'six');
   const isDRS = stadiumState.drs && stadiumState.drs.active;
@@ -229,7 +264,7 @@ const App = () => {
           </div>
 
           {/* OVERLAY: NEXT MATCH */}
-          {stadiumState.matchStatus === 'Ready For Next Match' && (
+          {stadiumState.matchStatus === STATUS_READY_NEXT && (
             <div className="next-match-overlay" role="dialog" aria-label="Start Next Match">
               <div className="next-match-card glass-panel">
                 <div className="next-match-trophy">🏟️</div>
@@ -253,6 +288,7 @@ const App = () => {
                     automatedTriggers.current = {
                       inn1_to1: false, inn1_to2: false, inn2_to1: false, inn2_to2: false, inningsBreak: false
                     };
+                    analyticsService.trackMatchStarted(engine.getState().matchInfo);
                   }}
                 >
                   ✨ START NEXT MATCH

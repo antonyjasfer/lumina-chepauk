@@ -1,10 +1,15 @@
 import React, { useState, useRef, useEffect, useCallback } from 'react';
+import PropTypes from 'prop-types';
 import geminiService from '../services/GeminiService';
+import analyticsService from '../services/AnalyticsService';
 
 /**
  * AiConcierge — Chat interface for the Google Gemini-powered stadium concierge.
  * Provides real-time crowd routing guidance using live telemetry data.
  * 
+ * @component
+ * @param {Object} props - Component props
+ * @param {Object} props.stadiumState - Current stadium state from StadiumEngine
  * @security User inputs are sanitized via GeminiService.sanitizeInput().
  * @accessibility Chat history uses aria-live="polite" for screen readers.
  */
@@ -31,9 +36,19 @@ const AiConcierge = React.memo(({ stadiumState }) => {
     setMessages(prev => [...prev, { role: 'user', text: userMsg }]);
     setIsLoading(true);
 
+    // Track chat message sent via analytics
+    const msgLower = userMsg.toLowerCase();
+    const messageType = msgLower.includes('food') ? 'food' :
+      msgLower.includes('water') ? 'water' :
+      msgLower.includes('merch') ? 'merchandise' :
+      msgLower.includes('score') ? 'score' :
+      msgLower.includes('crowd') ? 'crowd' : 'general';
+    analyticsService.trackChatMessage(messageType);
+
     try {
       const response = await geminiService.getConciergeResponse(userMsg, stadiumState);
       setMessages(prev => [...prev, { role: 'ai', text: response }]);
+      analyticsService.trackChatResponse(response.length, !geminiService.apiKey);
     } catch (error) {
       console.error('[AiConcierge] Error:', error);
       setMessages(prev => [...prev, { role: 'ai', text: "I'm having trouble connecting. Please try again in a moment." }]);
@@ -112,5 +127,22 @@ const AiConcierge = React.memo(({ stadiumState }) => {
 });
 
 AiConcierge.displayName = 'AiConcierge';
+
+AiConcierge.propTypes = {
+  /** Current stadium state object from StadiumEngine */
+  stadiumState: PropTypes.shape({
+    matchStatus: PropTypes.string.isRequired,
+    currentInnings: PropTypes.number.isRequired,
+    crowdZones: PropTypes.shape({
+      inSeats: PropTypes.number,
+      atAmenities: PropTypes.number,
+      roaming: PropTypes.number,
+      total: PropTypes.number,
+    }),
+    stalls: PropTypes.object,
+    waterStations: PropTypes.object,
+    scorecard: PropTypes.object,
+  }).isRequired,
+};
 
 export default AiConcierge;

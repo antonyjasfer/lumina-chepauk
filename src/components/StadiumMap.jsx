@@ -1,10 +1,14 @@
 import React from 'react';
+import PropTypes from 'prop-types';
 
 /**
  * StadiumMap — SVG-based real-time heatmap visualization of M.A. Chidambaram Stadium.
  * Renders 23 stands, 10 sponsor stalls, 4 water stations, and cricket field.
  * Color-coded congestion levels update dynamically via the StadiumEngine.
  *
+ * @component
+ * @param {Object} props - Component props
+ * @param {Object} props.state - Current stadium state from StadiumEngine
  * @accessibility SVG has role="img" and aria-label for screen readers.
  * @accessibility Each stand/stall has a <title> element for tooltip accessibility.
  */
@@ -283,5 +287,41 @@ const StadiumMap = React.memo(({ state }) => {
 });
 
 StadiumMap.displayName = 'StadiumMap';
+
+StadiumMap.propTypes = {
+  /** Current stadium state object from StadiumEngine */
+  state: PropTypes.shape({
+    stands: PropTypes.objectOf(PropTypes.shape({
+      density: PropTypes.number.isRequired,
+      excitement: PropTypes.number,
+      capacity: PropTypes.number.isRequired,
+    })).isRequired,
+    stalls: PropTypes.objectOf(PropTypes.shape({
+      crowd: PropTypes.number.isRequired,
+      capacity: PropTypes.number.isRequired,
+      type: PropTypes.string,
+      emoji: PropTypes.string,
+      sponsor: PropTypes.string,
+    })).isRequired,
+    waterStations: PropTypes.objectOf(PropTypes.shape({
+      crowd: PropTypes.number.isRequired,
+      capacity: PropTypes.number.isRequired,
+      emoji: PropTypes.string,
+      brand: PropTypes.string,
+    })).isRequired,
+    animation: PropTypes.shape({
+      ballInPlay: PropTypes.bool,
+      ballTarget: PropTypes.string,
+      batsmanSwing: PropTypes.bool,
+      bowlerRun: PropTypes.bool,
+    }).isRequired,
+    crowdZones: PropTypes.shape({
+      inSeats: PropTypes.number.isRequired,
+      atAmenities: PropTypes.number.isRequired,
+      roaming: PropTypes.number.isRequired,
+      total: PropTypes.number.isRequired,
+    }),
+  }).isRequired,
+};
 
 export default StadiumMap;

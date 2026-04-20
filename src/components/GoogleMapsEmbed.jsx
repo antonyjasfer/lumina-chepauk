@@ -1,9 +1,12 @@
 import React from 'react';
+import PropTypes from 'prop-types';
+import { GOOGLE_MAPS_CONFIG } from '../constants/index.js';
 
 /**
  * GoogleMapsEmbed — Embedded Google Maps component showing M.A. Chidambaram Stadium.
  * Demonstrates integration with Google Maps Embed API (no API key required for basic embed).
  * 
+ * @component
  * @accessibility Includes descriptive title on iframe for screen readers.
  * @see https://developers.google.com/maps/documentation/embed/get-started
  */
@@ -14,7 +17,7 @@ const GoogleMapsEmbed = React.memo(() => {
         📍 Stadium Location — Google Maps
       </h2>
       <p style={{ fontSize: '0.72rem', color: 'var(--text-secondary)', marginBottom: '10px' }}>
-        M.A. Chidambaram Stadium, Victoria Hostel Road, Chepauk, Chennai — 600005, Tamil Nadu
+        {GOOGLE_MAPS_CONFIG.STADIUM_NAME}, {GOOGLE_MAPS_CONFIG.ADDRESS}
       </p>
       <div style={{
         borderRadius: '12px',
@@ -24,15 +27,15 @@ const GoogleMapsEmbed = React.memo(() => {
         aspectRatio: '16/9',
       }}>
         <iframe
-          title="M.A. Chidambaram Stadium (Chepauk) on Google Maps"
-          src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3887.747!2d80.2789!3d13.0627!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x3a5265ea4f7d3361%3A0x6e61a70b6863d433!2sM.A.Chidambaram%20Stadium!5e0!3m2!1sen!2sin!4v1700000000000!5m2!1sen!2sin"
+          title={`${GOOGLE_MAPS_CONFIG.STADIUM_NAME} (Chepauk) on Google Maps`}
+          src={GOOGLE_MAPS_CONFIG.EMBED_URL}
           width="100%"
           height="100%"
           style={{ border: 0, position: 'absolute', top: 0, left: 0 }}
           allowFullScreen
           loading="lazy"
           referrerPolicy="no-referrer-when-downgrade"
-          aria-label="Interactive Google Map showing the location of M.A. Chidambaram Stadium in Chennai"
+          aria-label={`Interactive Google Map showing the location of ${GOOGLE_MAPS_CONFIG.STADIUM_NAME} in Chennai`}
         />
       </div>
       <div style={{
@@ -46,11 +49,11 @@ const GoogleMapsEmbed = React.memo(() => {
       }}>
         <span>Powered by Google Maps Embed API</span>
         <a
-          href="https://maps.google.com/?q=MA+Chidambaram+Stadium+Chennai"
+          href={GOOGLE_MAPS_CONFIG.DIRECTIONS_URL}
           target="_blank"
           rel="noopener noreferrer"
           style={{ color: 'var(--chepauk-yellow)', textDecoration: 'none' }}
-          aria-label="Open M.A. Chidambaram Stadium in Google Maps (opens in new tab)"
+          aria-label={`Open ${GOOGLE_MAPS_CONFIG.STADIUM_NAME} in Google Maps (opens in new tab)`}
         >
           Open in Google Maps →
         </a>
@@ -60,5 +63,7 @@ const GoogleMapsEmbed = React.memo(() => {
 });
 
 GoogleMapsEmbed.displayName = 'GoogleMapsEmbed';
+
+GoogleMapsEmbed.propTypes = {};
 
 export default GoogleMapsEmbed;

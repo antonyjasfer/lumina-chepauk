@@ -1,10 +1,20 @@
 import React from 'react';
+import PropTypes from 'prop-types';
 
 /**
  * Scorecard — Live cricket scorecard component.
  * Displays team scores, batsmen stats, bowler stats, DRS reviews,
  * last 6 balls, live commentary, and partnership info.
  * 
+ * @component
+ * @param {Object} props - Component props
+ * @param {Object} props.scorecard - Scorecard data including innings, batsmen, bowler
+ * @param {Object} props.matchInfo - Match information (teams, venue)
+ * @param {number} props.currentInnings - Current innings number (1 or 2)
+ * @param {Object} props.drs - DRS review state
+ * @param {string|null} props.matchResult - Match result string
+ * @param {string} props.matchStatus - Current match status
+ * @param {Object|null} props.requiredRunRate - Required run rate data for 2nd innings
  * @accessibility Uses aria-live regions for dynamic score updates.
  */
 const Scorecard = React.memo(({ scorecard, matchInfo, currentInnings, drs, matchResult, matchStatus, requiredRunRate }) => {
@@ -160,5 +170,115 @@ const Scorecard = React.memo(({ scorecard, matchInfo, currentInnings, drs, match
 });
 
 Scorecard.displayName = 'Scorecard';
+
+/**
+ * @typedef {Object} InningsData
+ * @property {string} team - Team short name
+ * @property {number} runs - Total runs scored
+ * @property {number} wickets - Total wickets lost
+ * @property {number} overs - Completed overs
+ * @property {number} balls - Balls in current over
+ * @property {number} extras - Total extras
+ * @property {number} runRate - Current run rate
+ */
+
+/**
+ * @typedef {Object} BatsmanData
+ * @property {string} name - Batsman name
+ * @property {number} runs - Runs scored
+ * @property {number} balls - Balls faced
+ * @property {number} fours - Number of fours
+ * @property {number} sixes - Number of sixes
+ * @property {boolean} onStrike - Whether currently on strike
+ */
+
+Scorecard.propTypes = {
+  /** Full scorecard data including both innings, batsmen, bowler, etc. */
+  scorecard: PropTypes.shape({
+    innings1: PropTypes.shape({
+      team: PropTypes.string.isRequired,
+      runs: PropTypes.number.isRequired,
+      wickets: PropTypes.number.isRequired,
+      overs: PropTypes.number.isRequired,
+      balls: PropTypes.number.isRequired,
+      extras: PropTypes.number,
+      runRate: PropTypes.number.isRequired,
+    }).isRequired,
+    innings2: PropTypes.shape({
+      team: PropTypes.string.isRequired,
+      runs: PropTypes.number.isRequired,
+      wickets: PropTypes.number.isRequired,
+      overs: PropTypes.number.isRequired,
+      balls: PropTypes.number.isRequired,
+      extras: PropTypes.number,
+      runRate: PropTypes.number.isRequired,
+    }).isRequired,
+    currentBatsmen: PropTypes.arrayOf(PropTypes.shape({
+      name: PropTypes.string.isRequired,
+      runs: PropTypes.number.isRequired,
+      balls: PropTypes.number.isRequired,
+      fours: PropTypes.number.isRequired,
+      sixes: PropTypes.number.isRequired,
+      onStrike: PropTypes.bool.isRequired,
+    })).isRequired,
+    currentBowler: PropTypes.shape({
+      name: PropTypes.string.isRequired,
+      overs: PropTypes.number.isRequired,
+      balls: PropTypes.number.isRequired,
+      runs: PropTypes.number.isRequired,
+      wickets: PropTypes.number.isRequired,
+      economy: PropTypes.number.isRequired,
+    }).isRequired,
+    lastSixBalls: PropTypes.arrayOf(PropTypes.string).isRequired,
+    lastEvent: PropTypes.shape({
+      type: PropTypes.string.isRequired,
+      description: PropTypes.string.isRequired,
+    }),
+    partnership: PropTypes.shape({
+      runs: PropTypes.number.isRequired,
+      balls: PropTypes.number.isRequired,
+    }).isRequired,
+  }).isRequired,
+  /** Match information including both team details */
+  matchInfo: PropTypes.shape({
+    team1: PropTypes.shape({
+      name: PropTypes.string.isRequired,
+      short: PropTypes.string.isRequired,
+      color: PropTypes.string.isRequired,
+    }).isRequired,
+    team2: PropTypes.shape({
+      name: PropTypes.string.isRequired,
+      short: PropTypes.string.isRequired,
+      color: PropTypes.string.isRequired,
+    }).isRequired,
+  }).isRequired,
+  /** Current innings number (1 or 2) */
+  currentInnings: PropTypes.number.isRequired,
+  /** DRS (Decision Review System) state */
+  drs: PropTypes.shape({
+    active: PropTypes.bool.isRequired,
+    reviewsRemaining: PropTypes.shape({
+      team1: PropTypes.number,
+      team2: PropTypes.number,
+    }),
+  }),
+  /** Match result string (null if match in progress) */
+  matchResult: PropTypes.string,
+  /** Current match status string */
+  matchStatus: PropTypes.string.isRequired,
+  /** Required run rate data for second innings chase */
+  requiredRunRate: PropTypes.shape({
+    target: PropTypes.number.isRequired,
+    runsNeeded: PropTypes.number.isRequired,
+    ballsRemaining: PropTypes.number.isRequired,
+    requiredRunRate: PropTypes.number.isRequired,
+  }),
+};
+
+Scorecard.defaultProps = {
+  matchResult: null,
+  requiredRunRate: null,
+  drs: null,
+};
 
 export default Scorecard;

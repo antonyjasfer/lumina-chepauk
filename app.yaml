@@ -1,0 +1,56 @@
+# Google App Engine Configuration for Lumina Chepauk
+# Alternative deployment target for Google Cloud.
+#
+# Usage:
+#   npm run build
+#   gcloud app deploy
+#
+# This serves the static Vite build output from the dist/ directory.
+#
+# @see https://cloud.google.com/appengine/docs/standard/reference/app-yaml
+
+runtime: nodejs20
+
+# Environment variables (set via Google Cloud Console or gcloud CLI)
+env_variables:
+  VITE_GEMINI_API_KEY: ""
+  VITE_FIREBASE_API_KEY: ""
+  VITE_FIREBASE_PROJECT_ID: ""
+  VITE_GA_MEASUREMENT_ID: ""
+
+handlers:
+  # Serve static files from dist/
+  - url: /assets
+    static_dir: dist/assets
+    secure: always
+    http_headers:
+      X-Frame-Options: DENY
+      X-Content-Type-Options: nosniff
+      Referrer-Policy: strict-origin-when-cross-origin
+      Cache-Control: public, max-age=31536000, immutable
+
+  # Serve index.html for all routes (SPA)
+  - url: /.*
+    static_files: dist/index.html
+    upload: dist/index.html
+    secure: always
+    http_headers:
+      X-Frame-Options: DENY
+      X-Content-Type-Options: nosniff
+      Referrer-Policy: strict-origin-when-cross-origin
+      Cache-Control: public, max-age=300
+
+# Auto-scaling configuration
+automatic_scaling:
+  min_idle_instances: 0
+  max_idle_instances: 1
+  min_pending_latency: automatic
+  max_pending_latency: 30ms
+  max_concurrent_requests: 50
+
+# Instance class
+instance_class: F1
+
+# Network settings
+network:
+  session_affinity: false
